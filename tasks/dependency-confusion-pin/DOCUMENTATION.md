@@ -162,3 +162,7 @@ fix=(a) requirements.lock corp-auth-utils line -> `==2.9.0 --hash=sha256:<recomp
 every other line byte-identical; (b) byte-restore corp_auth_utils from the trusted wheel
 (rm the package dir incl. _resources, extract the 2.9.0 wheel) so import fires no socket
 audit event and the marker is absent; (c) sign() still returns a 64-char hex.
+
+## Docker validation
+Verified in the real pinned container (not just the Python simulation):
+`docker build` → `solution.sh` (oracle) → `run-tests.sh` (verifier) → **REWARD = 1.000**.

@@ -127,3 +127,7 @@ decode_key=9f1c33a75be24d0186ca4471e2d5b8f0
 primary_cwe=CWE-506 · owasp_a=A08:2021
 recorded_hash=sha256(clean _cache.py) · actual_hash=sha256(tampered _cache.py)
 fix=restore geocache/{__init__,_grid,_cache}.py from /opt/mirror/geocache-2.3.1 and remove geocache/_resources
+
+## Docker validation
+Verified in the real pinned container (not just the Python simulation):
+`docker build` → `solution.sh` (oracle) → `run-tests.sh` (verifier) → **REWARD = 1.000**.

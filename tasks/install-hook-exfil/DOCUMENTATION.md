@@ -145,3 +145,7 @@ primary_cwe=CWE-506 · owasp_a=A06:2021
 fix=remove metricslib-autoload.pth, remove metricslib/_autoload.py, and remove
 metricslib/_resources; the legitimate metricslib/{__init__,_stats}.py stay and still
 match the dist-info RECORD.
+
+## Docker validation
+Verified in the real pinned container (not just the Python simulation):
+`docker build` → `solution.sh` (oracle) → `run-tests.sh` (verifier) → **REWARD = 1.000**.
