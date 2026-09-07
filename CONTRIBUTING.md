@@ -25,4 +25,12 @@ D3 mean(Hy) < mean(SOTA) · D4 SOTA variance != 0. Turn-count: Hy>80 or Opus5-xh
 
 ## Provenance
 `DOCUMENTATION.md` must carry curation history (v1->final), difficulty/rollout plan,
-failure-mode analysis, and QA notes.
+failure-mode analysis, and QA notes. The suite-level compilation (category /
+difficulty / turn-count distribution, rollout results, QA re-inspection status) lives
+in `DELIVERY.md`.
+
+## QA mechanism
+QA is dual **human + LLM**. The official Terminal-Bench standard
+(`harbor-framework/terminal-bench-3`) is the reference for QA criteria. Every task is
+re-inspected on: instruction quality, instruction-test consistency, test quality,
+environment reproducibility, and answer dependency (tracked in `DELIVERY.md` §8).

@@ -5,3 +5,6 @@ __pycache__/
 nwmt_*/
 study/
 requirement-brief.html
+.venv/
+.harbor/
+mtf_*/

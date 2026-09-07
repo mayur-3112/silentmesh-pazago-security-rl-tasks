@@ -1,0 +1,55 @@
+instruction: |
+  A Python 3.11 service is installed at /app/service and depends on packages that
+  were installed from the organization's internal mirror at /opt/mirror. The active
+  environment's site-packages is /usr/local/lib/python3.11/site-packages. During an
+  egress review the service process was seen attempting a single outbound connection
+  to a host that is not part of the mirror and appears nowhere in the first-party
+  source under /app/service/src; the review notes are at /app/service/logs/egress.log
+  and a software bill of materials is at /app/service/sbom.cdx.json.
+
+  Exactly one file belonging to one installed distribution was altered after that
+  distribution was built by its legitimate upstream author. The alteration adds code
+  that runs on its own and hands off to a staged payload; the payload is held on disk
+  only in obfuscated form and is what performs the observed connection. The mirror
+  holds the untouched build of the affected distribution, and each installed
+  distribution carries a dist-info RECORD integrity manifest.
+
+  Write a findings report as a single JSON object at the absolute path
+  /app/report.json with exactly these keys:
+    compromised_package - the affected distribution name
+    malicious_path      - absolute path of the single altered file
+    trigger             - when the injected code first runs, one of:
+                          import, install, runtime-entrypoint
+    c2_host             - the fully-qualified host the payload contacts
+    c2_port             - the TCP port the payload connects to
+    exfil_endpoint      - the request path the payload targets on that host
+    decode_key          - the key that deobfuscates the staged payload, as hex
+    recorded_hash       - the SHA-256 hex digest the integrity manifest records for
+                          the altered file (its untouched form)
+    actual_hash         - the SHA-256 hex digest of the altered file as currently
+                          installed, before any remediation
+    primary_cwe         - the CWE identifier (form "CWE-###") that most precisely
+                          classifies the injected-code weakness
+    owasp_a             - the OWASP Top 10 2021 category identifier (form "A##:2021")
+                          for the weakness
+
+  Then remediate the installed distribution so that it once again matches its
+  recorded integrity manifest, importing the package performs no outbound activity
+  and runs no staged payload, and the package's documented functionality is
+  unchanged. The environment has no outbound network access; recover every reported
+  value from the files on disk alone.
+
+author_name: SilentMesh
+author_email: mayur311agarwal@gmail.com
+category: security
+difficulty: hard
+tags:
+  - cwe-506
+  - owasp-a08
+  - supply-chain
+  - malware-analysis
+  - integrity-manifest
+  - deobfuscation
+max_agent_timeout_sec: 3600
+max_test_timeout_sec: 300
+run_tests_in_same_shell: false

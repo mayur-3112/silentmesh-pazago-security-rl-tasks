@@ -37,9 +37,16 @@ harness; this repository ships everything required to run it.
 
 | ID | Difficulty | CWE | OWASP | Attack mechanism |
 |---|---|---|---|---|
-| `nw-mirror-tamper-v2` | hard | CWE-506 | A06:2021 | Post-build tamper, integrity-manifest detection (flagship) |
-| `dep-confusion-hijack` | hard | CWE-494 | A08:2021 | Dependency confusion, hash-pin remediation |
-| `nw-mirror-tamper-v1` | medium | CWE-506 | A06:2021 | Post-build tamper (baseline; shows the v1→v2 hardening) |
+| `mirror-tamper-forensics` | hard | CWE-506 | A08:2021 | Post-build tamper; multi-stage non-inline obfuscation; RECORD/SBOM integrity forensics; restore |
+| `dependency-confusion-pin` | hard | CWE-494 | A08:2021 | Resolution-time substitution; recompute-the-trusted-hash; lockfile re-pin + reinstall |
+| `install-hook-exfil` | hard | CWE-506 | A06:2021 | Malicious `.pth` startup hook; static payload decode; hook removal verified at interpreter startup |
+
+Every task's reward is the fraction of independent verifier items passed. The reward is
+**earned-dominant and un-gameable**: C2 indicators live only inside a multi-stage
+obfuscated payload (nothing greppable), guessable/classification fields are credited only
+after localization, and remediation is checked behaviourally (exact restore, injected-marker
+absence, and an un-clobberable `sys.addaudithook` probe). Measured reward-hacking floor per
+task (`python local_test.py --lazy`): **0.00–0.19**; the reference oracle scores **1.000**.
 
 ## Quick start
 
@@ -48,16 +55,22 @@ pip install -r requirements-dev.txt
 make suite          # expected last line: SUITE RESULT: ALL PASS
 ```
 
-Single task, no Docker: `make test T=nw-mirror-tamper-v2`
-In the real container: `make verify T=nw-mirror-tamper-v2` (requires Docker).
+Single task, no Docker: `make test T=mirror-tamper-forensics`
+In the real container: `make verify T=mirror-tamper-forensics` (requires Docker).
 Full testing guide: `HOW-TO-TEST.md`.
 
 ## Acceptance model (`dataset.yaml`)
 Graded on **mean reward**, four conjunctive gates: D1 Hy4-Preview (think) ≥8 rollouts
 mean ≤ 0.4 · D2 SOTA ≥5 rollouts mean ≤ 0.6 · D3 mean(Hy) < mean(SOTA) · D4 SOTA
-variance ≠ 0. Real rollout figures are produced on the official harness.
+variance ≠ 0. Real rollout figures are produced on the official harness. The full
+vendor-side compilation (category / difficulty / turn-count distribution, rollout
+results, failure-mode and provenance pointers, QA re-inspection status) is in
+`DELIVERY.md`.
 
 ## Status
-All tasks pass the suite (static compliance + oracle solve) locally and in CI. The
-in-container Docker build and the live mean-reward rollouts are the two steps that run
-on the customer's infrastructure.
+All three tasks pass the suite (static compliance + oracle solve) locally and in CI; the
+real pinned-container Docker path (`make verify`) — oracle + fractional verifier — passes
+locally for every task; and each task also grades **1.000** under the Harbor harness
+(`harbor run -a oracle`, `terminal-bench-3` reference). The measured reward-hacking floor
+is 0.00–0.19 per task. The live mean-reward rollouts (D1–D4) are the one step that runs on
+the customer's official harness.

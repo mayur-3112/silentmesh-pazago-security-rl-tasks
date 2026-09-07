@@ -20,9 +20,10 @@ build:
 verify:
 	cd tasks/$(T) && docker build -t $(T) . \
 	 && docker run --network=none -dit --name $(T)-run $(T) \
+	 && docker cp solution.sh $(T)-run:/app/solution.sh \
 	 && docker exec $(T)-run bash /app/solution.sh \
 	 && docker cp tests $(T)-run:/app/tests && docker cp run-tests.sh $(T)-run:/app/ \
-	 && docker exec --network=none $(T)-run bash /app/run-tests.sh; \
+	 && docker exec $(T)-run bash /app/run-tests.sh; \
 	 docker rm -f $(T)-run
 
 clean:
