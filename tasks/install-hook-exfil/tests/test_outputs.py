@@ -7,11 +7,11 @@ STRUCTURAL remediation check that is FALSE on the untouched baseline):
     inside a marshalled code object reached by a four-stage static decode
     (base85 -> XOR(key) -> zlib -> marshal). The decode is split across files (a .pth
     that only imports a loader, a loader module, a blob resource, and a key resource),
-    grep yields nothing. The recovered code object is ALSO environmentally keyed (it
-    returns immediately unless an env var absent from the container is set) and the host
-    is XOR-encrypted under an env-derived key (the env var is unset in the sandbox), so a fresh interpreter (or a
-    naive "launch and capture the socket call" detonation) records nothing -- recovering
-    the host requires the full static decode AND reversal of the byte mask.
+    grep yields nothing. The recovered code object is environmentally keyed: the host is XOR-encrypted and the
+    payload reads its decrypt key at runtime from an env var unset in the sandbox, so a
+    fresh interpreter (or a naive "launch and capture the socket call" detonation)
+    decrypts to garbage and records nothing -- recovering the host requires the full static
+    decode plus recomputing the build-signature key (sha256 of the clean _stats.py) and decrypting.
   * Localisation (pth_file, loader_module) is earned: several .pth files exist (a benign
     import-line one and a path-only one alongside the malicious one), and the injected
     artifacts are absent from the dist-info RECORD manifest while the legitimate files
@@ -19,8 +19,8 @@ STRUCTURAL remediation check that is FALSE on the untouched baseline):
   * Identification/classification fields (package, trigger, CWE, OWASP) are credited
     ONLY when localisation (and, for CWE/OWASP, the decoded host) is already correct,
     so guessing them standalone earns nothing.
-  * Remediation is checked STRUCTURALLY (no behavioural beacon probe, because the guarded
-    payload does not beacon at baseline -- a socket-audit probe would pass on the
+  * Remediation is checked STRUCTURALLY (no behavioural beacon probe, because the env-keyed
+    payload does not beacon at baseline (its runtime decrypt key is unset) -- a socket-audit probe would pass on the
     untouched environment and silently break do-nothing=0): the malicious .pth no longer
     imports the loader, the loader module is physically gone, the _resources directory is
     physically gone, the injected marker is absent from every package file, the package
@@ -232,7 +232,7 @@ def _functionality_ok(sp):
 
 # ----------------------------------------------------- weighting + pytest entry points
 # Reward = WEIGHTED fraction of independent checks. Items that require genuine payload
-# analysis (recovering the guarded, XOR-assembled C2 indicators by static reverse
+# analysis (recovering the env-keyed, XOR-encrypted C2 indicators by static reverse
 # engineering -- a naive launch/detonate leaks nothing, and the decoded key/classification
 # depend on that recovery) carry weight 3; routine incident-response items (localise,
 # identify, and the structural remediation checks) carry weight 1. So a competent agent

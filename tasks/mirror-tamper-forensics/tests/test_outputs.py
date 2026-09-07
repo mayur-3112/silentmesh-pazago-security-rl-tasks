@@ -17,7 +17,8 @@ Anti-reward-hacking design:
   * Identification/classification fields (package, trigger, CWE, OWASP) are credited
     ONLY when localisation (and, for CWE/OWASP, the decoded host) is already correct,
     so guessing them standalone earns nothing.
-  * Remediation is checked STRUCTURALLY (the guarded payload emits no beacon, so a
+  * Remediation is checked STRUCTURALLY (the env-keyed payload emits no beacon in the
+    sandbox, so a
     behavioural socket probe would be meaningless): exact restore to the clean RECORD
     hash, the injected marker absent from every package file, a full manifest match with
     the injected resource directory physically gone (not merely de-listed from the
@@ -203,7 +204,7 @@ def _functionality_ok(sp):
 
 # ----------------------------------------------------- weighting + pytest entry points
 # Reward = WEIGHTED fraction of independent checks. Items that require genuine payload
-# analysis (recovering the guarded, XOR-assembled C2 indicators by static reverse
+# analysis (recovering the env-keyed, XOR-encrypted C2 indicators by static reverse
 # engineering -- a naive import/detonate leaks nothing, and the decoded key/classification
 # depend on that recovery) carry weight 3; routine incident-response items (localise,
 # hash, identify, remediate) carry weight 1. So a competent agent that does everything

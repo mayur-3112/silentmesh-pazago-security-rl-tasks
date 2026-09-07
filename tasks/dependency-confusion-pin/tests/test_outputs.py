@@ -6,8 +6,8 @@ STRUCTURAL remediation check that is FALSE on the untouched baseline):
   * indicator_host / indicator_port exist in plaintext NOWHERE on disk -- only inside
     a marshalled code object reached by a four-stage static decode
     (base85 -> XOR(key) -> zlib -> marshal), split across two resource files, and the
-    host is additionally XOR-encrypted and assembled only inside a guarded branch that a
-    plain import never runs. Neither grep, a single decode, nor dynamic detonation
+    host is additionally XOR-encrypted under a key the payload reads at runtime from an
+    environment variable that is unset in the sandbox. Neither grep, a single decode, nor dynamic detonation
     (the host is XOR-encrypted under a key read at runtime from an unset env var) yields them; recovery requires
     the full static decode plus reversing the host XOR. indicator_port is credited only
     when the host is correct, so a common-port guess earns nothing.
@@ -21,7 +21,8 @@ STRUCTURAL remediation check that is FALSE on the untouched baseline):
     CWE/OWASP are credited ONLY when the decoded host is correct. Guessing them
     standalone earns nothing.
   * Remediation is checked STRUCTURALLY (no behavioural beacon probe, because the
-    guarded payload does not beacon at baseline -- a socket probe would pass on the
+    env-keyed payload does not beacon at baseline (its runtime decrypt key is unset) --
+    a socket probe would pass on the
     untouched install and break do-nothing=0): (a) the lockfile re-pinned to the
     trusted version with the RECOMPUTED integrity hash while every unrelated line stays
     byte-identical, (b) the installed package's bytes exactly equal the trusted wheel's
@@ -218,8 +219,8 @@ def run_checks(report_path="/app/report.json", sp=None,
 
     # ---- remediation (b): STRUCTURAL -- the installed package's bytes exactly equal
     #      the trusted wheel's package contents AND the injected marker is absent from
-    #      every file. No behavioural socket probe: the guarded payload does not beacon
-    #      at baseline, so a probe would pass on the untouched install and silently
+    #      every file. No behavioural socket probe: the payload does not beacon
+    #      at baseline (runtime decrypt key unset), so a probe would pass and silently
     #      break the do-nothing=0 property. A byte-for-byte content match cannot be
     #      faked by symptom suppression and is FALSE on the untouched (malicious)
     #      install (extra _resources files + tampered _signing.py) ----
@@ -235,7 +236,7 @@ def run_checks(report_path="/app/report.json", sp=None,
 
 # ----------------------------------------------------- weighting + pytest entry points
 # Reward = WEIGHTED fraction of independent checks. Items that require genuine payload
-# analysis (recovering the guarded, XOR-encrypted C2 indicators by static reverse
+# analysis (recovering the env-keyed, XOR-encrypted C2 indicators by static reverse
 # engineering -- a naive import/detonate leaks nothing, and the CWE/OWASP classification
 # gates on that recovery) carry weight 5; routine incident-response items (recompute the
 # trusted hash, identify the artifacts, versions, package, control, re-pin, restore,

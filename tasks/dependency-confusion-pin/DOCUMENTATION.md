@@ -46,8 +46,8 @@
     artifact paths are credited only once the trusted hash is recomputed; CWE/OWASP only
     once the host is decoded); and remediation is verified **structurally** by exact lock
     re-pin + full byte-restore (installed bytes == trusted wheel contents) +
-    marker-absence — no behavioural socket probe, because the guarded payload does not
-    beacon at baseline, so a probe would pass on the untouched install and break
+    marker-absence — no behavioural socket probe, because the payload does not beacon at
+    baseline (its runtime decrypt key is unset), so a probe would pass on the untouched install and break
     do-nothing=0. The reward is **weighted**: the payload-analysis items (host, port,
     and the CWE/OWASP that gate on the host) carry weight 5, routine IR items weight 1,
     so a competent responder who skips the payload analysis caps at 0.333. Decoy wheels
@@ -122,8 +122,8 @@ survey-cache-and-index → distinguish-the-two-wheels → recompute-hash → loc
   nothing; CWE/OWASP are credited only once the host is decoded; delete/stub/
   symptom-suppression fake-fixes fail the remediation **structurally** because the
   installed package must **byte-match** the trusted build's contents AND the marker must
-  be absent (no behavioural socket probe — the guarded payload does not beacon at
-  baseline, so a probe would pass on the untouched install and break do-nothing=0);
+  be absent (no behavioural socket probe — the payload does not beacon at
+  baseline (its runtime decrypt key is unset), so a probe would pass on the untouched install and break do-nothing=0);
   functionality is credited only alongside a real restore; a do-nothing submission
   scores 0 on all three remediation items. The reward is weighted (payload-analysis
   items ×5) so a competent responder who skips the reverse engineering caps at 0.333.

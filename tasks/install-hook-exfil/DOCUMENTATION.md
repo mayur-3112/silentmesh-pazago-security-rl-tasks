@@ -23,7 +23,7 @@
 - **Value once solved:** trains an agent to (a) reason that a `.pth` import line is a
   startup execution primitive and localize the malicious one among benign `.pth` files,
   (b) trace it to a loader module that is absent from the dist-info RECORD, (c) reason
-  that the guarded payload cannot be recovered by naive detonation and must be statically
+  that the env-keyed payload cannot be recovered by naive detonation and must be statically
   reverse engineered, (d) reverse a four-stage transform (base85 → XOR(key) → zlib →
   marshal) split across bundled resources, read indicators out of a marshalled code
   object, and reverse the XOR host mask, and (e) remediate by removing the `.pth`,
@@ -42,8 +42,9 @@
     graded indicators (host/port/endpoint) exist in plaintext nowhere on disk; every
     guessable/classification field is credited **only** when the earned localisation
     (and, for CWE/OWASP, the decoded host) is already correct. A later hardening pass added
-    a **environmental keying** and **runtime XOR host assembly** to the recovered code
-    object (so a fresh interpreter runs no beacon and a naive detonation recovers nothing),
+    **environmental keying** — the host XOR-encrypted with a decrypt key the payload reads
+    at runtime from an env var unset in the sandbox — to the recovered code object (so a
+    fresh interpreter runs no beacon and a naive detonation decrypts to garbage),
     replaced the behavioural `sys.addaudithook` startup probes with **structural**
     remediation checks (`.pth` neutralised, loader module gone, `_resources` gone,
     marker-absent, manifest-clean, functionality gated on removal), and moved to a
@@ -57,10 +58,10 @@ un-guessable items (c2_host, c2_port, exfil_endpoint, decode_key, and the host-g
 CWE/OWASP) carry weight 3; the nine routine incident-response items (localise the `.pth`
 and its loader, package, trigger, and five structural remediation checks) carry weight 1 —
 27 weighted units in all. Recovering the C2 host is genuine reverse engineering: the
-recovered code object is guarded by a sandbox-evasion check (so a fresh interpreter /
-naive detonation runs no beacon and captures nothing) and the host is XOR-encrypted and
-encrypted under an env-derived key that is unset in the sandbox, so it must be reconstructed by static decrypt, not
-read as a constant or sniffed from a live call.
+host is XOR-encrypted and the payload reads its decrypt key at runtime from an env var
+unset in the sandbox (so a fresh interpreter / naive detonation decrypts to garbage and
+contacts no real host), so it must be reconstructed by static decode + recomputing the
+build-signature key and decrypting, not read as a constant or sniffed from a live call.
 
 **Measured reward profile** (reproducible; `--lazy` for the floor):
 - do-nothing / blind guess → **~0.11**
@@ -107,8 +108,8 @@ resources → re-verify-startup loop across a multi-package tree with decoys and
   audit hook). Localisation is earned (benign import-line and path-only `.pth` decoys, plus
   the RECORD manifest, are required to disambiguate); identification/classification is gated
   on localisation and the decoded host. Remediation is checked **structurally** (no
-  behavioural beacon probe — the guarded payload does not beacon at baseline, so a socket
-  probe would pass on the untouched environment and silently break do-nothing=0): delete/
+  behavioural beacon probe — the env-keyed payload does not beacon at baseline (its runtime
+  decrypt key is unset), so a socket probe would pass on the untouched environment and silently break do-nothing=0): delete/
   stub/manifest-edit fake-fixes that leave any injected artifact on disk fail `R11`
   (`.pth` still imports the loader), `R12` (loader module still present), `R13` (manifest
   dirty or `_resources` still present) or `R14` (marker still present), and `R16`

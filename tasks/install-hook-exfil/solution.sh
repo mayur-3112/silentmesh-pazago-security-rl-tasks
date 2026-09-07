@@ -67,8 +67,8 @@ def _walk(c):
             _walk(k)
 _walk(code)
 # the host is XOR-encrypted; the payload reads its decrypt key from an env var (unset here):
-# reverse it statically -- for each bytes const and each single-byte key, xor and match
-# a hostname regex (no plaintext host constant exists to read).
+# decrypt it statically -- the key is the build signature (sha256 of the clean
+# metricslib/_stats.py); xor each bytes const by that 16-byte key and match a hostname regex.
 # host is XOR-encrypted; the payload reads its decrypt key at runtime from an env var
 # (unset here, so a naive startup decrypts to garbage). The real key is the build
 # signature: sha256 of the clean metricslib/_stats.py (its hash is in the RECORD manifest).
