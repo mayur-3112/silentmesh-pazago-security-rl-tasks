@@ -83,7 +83,10 @@ def build(root):
         "geocache/_grid.py,%s,%d\n" % (rh(clean_grid), len(clean_grid)))
     _w(os.path.join(SVC, "main.py"), "import geocache\n")
 
+    # graders-only sidecar (portable equivalent of /opt/grader)
+    _w(os.path.join(root, "grader_actual_hash"), hashlib.sha256(tampered.encode()).hexdigest())
     return dict(root=root, SP=SP, PKG=PKG, MIRROR=MIRROR, APP=APP,
+                SIDECAR=os.path.join(root, "grader_actual_hash"),
                 GRID=os.path.join(PKG, "_grid.py"),
                 MIRROR_GRID=os.path.join(MIRROR, "_grid.py"),
                 RECORD=os.path.join(di, "RECORD"),
@@ -135,8 +138,8 @@ def grade(P):
     chk("R7 cwe", g("primary_cwe").upper().replace(" ", "") == "CWE-506")
     chk("R8 owasp", g("owasp_a").upper().replace(" ", "") == "A06:2021")
     chk("R9 recorded_hash", g("recorded_hash").lower() == P["clean_hex"])
-    chk("R10 actual_hash", bool(re.fullmatch(r"[0-9a-f]{64}", g("actual_hash").lower()))
-                           and g("actual_hash").lower() != P["clean_hex"])
+    expected = open(P["SIDECAR"]).read().strip().lower()
+    chk("R10 actual_hash exact match", g("actual_hash").lower() == expected)
     installed = open(P["GRID"], "rb").read()
     b64 = base64.urlsafe_b64encode(hashlib.sha256(installed).digest()).decode().rstrip("=")
     chk("R11 restored matches manifest", b64 == recorded_b64)

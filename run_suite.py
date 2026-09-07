@@ -18,9 +18,16 @@ import os, re, sys, subprocess, glob
 ROOT = os.path.dirname(os.path.abspath(__file__))
 TASKS = sorted(d for d in glob.glob(os.path.join(ROOT, "tasks", "*")) if os.path.isdir(d))
 STEER = ["step by step", "you are an expert", "please think", "as an expert"]
-REQUIRED = ["task.yaml", "Dockerfile", "docker-compose.yaml", "solution.sh",
-            "run-tests.sh", os.path.join("tests", "test_outputs.py"),
-            os.path.join("env", "gen", "build_env.py")]
+REQUIRED_DOCKER = ["task.yaml", "Dockerfile", "docker-compose.yaml", "solution.sh",
+                   "run-tests.sh", os.path.join("tests", "test_outputs.py"),
+                   os.path.join("env", "gen", "build_env.py")]
+REQUIRED_ENV = ["task.yaml", "scenario.py", "oracle.py", "adversarial.py",
+                "local_test.py", "DOCUMENTATION.md"]
+
+
+def _task_kind(task):
+    y = read(os.path.join(task, "task.yaml"))
+    return "env" if re.search(r"^harness:\s*env\.core", y, re.M) else "docker"
 
 
 def read(p):
@@ -52,8 +59,10 @@ def report_keys_from_instruction(instr):
 def static_checks(task):
     out = []
     def chk(n, c): out.append((n, bool(c)))
-    files_ok = all(os.path.exists(os.path.join(task, f)) for f in REQUIRED)
-    chk("required files present", files_ok)
+    kind = _task_kind(task)
+    required = REQUIRED_ENV if kind == "env" else REQUIRED_DOCKER
+    files_ok = all(os.path.exists(os.path.join(task, f)) for f in required)
+    chk("required files present [%s]" % kind, files_ok)
     instr = instruction_of(task)
     wc = len(instr.split())
     chk("instruction <=1500 words (%d)" % wc, wc <= 1500 and wc > 0)
@@ -61,7 +70,7 @@ def static_checks(task):
     chk("no steering phrases", not any(s in instr.lower() for s in STEER))
     chk("no relative paths", not re.findall(r"(?<!\w)\.\.?/[\w./-]+", instr))
     chk("uses an absolute path", bool(re.search(r"(?<!\w)/[\w./-]+", instr)))
-    if files_ok:
+    if files_ok and kind == "docker":
         dockp = read(os.path.join(task, "Dockerfile"))
         chk("Dockerfile pins base image", bool(re.search(r"FROM\s+\S+:\S+", dockp)))
         chk("Dockerfile deletes generator", "rm -f /tmp/build_env.py" in dockp)
@@ -77,7 +86,7 @@ def dynamic_check(task):
     if not os.path.exists(lt):
         return None, "no local_test.py"
     r = subprocess.run([sys.executable, lt], capture_output=True, text=True)
-    m = re.search(r"REWARD = \d+/\d+ = ([0-9.]+)", r.stdout)
+    m = re.search(r"REWARD = (?:\d+/\d+ = )?([0-9.]+)", r.stdout)
     if not m:
         return False, (r.stdout + r.stderr)[-400:]
     return abs(float(m.group(1)) - 1.0) < 1e-9, "reward=%s" % m.group(1)

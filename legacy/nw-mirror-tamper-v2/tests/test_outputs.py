@@ -85,13 +85,11 @@ def test_r9_recorded_hash():
 
 
 def test_r10_actual_hash():
-    # must equal the hash of the file AS DELIVERED (tampered). We reconstruct the
-    # tampered hash from the RECORD-style digest we captured at build not being
-    # available post-fix, so we accept any 64-hex that differs from clean AND that
-    # the report itself is internally consistent with a real (non-clean) reading.
+    # Exact match against the tampered-file hash captured at build time in the
+    # graders-only sidecar /opt/grader/actual_hash. No guessing possible.
+    expected = open("/opt/grader/actual_hash").read().strip().lower()
     v = _r()["actual_hash"].strip().lower()
-    assert re.fullmatch(r"[0-9a-f]{64}", v), "actual_hash not a sha256 hex"
-    assert v != CLEAN_HEX, "actual_hash equals the clean hash (file was not read tampered)"
+    assert v == expected, f"actual_hash mismatch (got {v!r}, expected the sha256 of the tampered file)"
 
 
 def test_r11_restored_matches_manifest():

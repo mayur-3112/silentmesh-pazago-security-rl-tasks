@@ -133,4 +133,8 @@ for mod in ("routecalc", "geometrics"):
 # first-party service
 os.makedirs("/app/service/src/svc", exist_ok=True)
 open("/app/service/src/svc/main.py", "w").write("import geocache\n")
+# graders-only ground truth (not under /app; documented as such)
+os.makedirs("/opt/grader", exist_ok=True)
+open("/opt/grader/actual_hash", "w").write(tamp_hex)
+open("/opt/grader/clean_hash", "w").write(clean_hex)
 print("built. clean_hex", clean_hex, "tamp_hex", tamp_hex)
