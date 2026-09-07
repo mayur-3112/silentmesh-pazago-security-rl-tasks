@@ -18,7 +18,12 @@ unverified artefacts).
 """
 from __future__ import annotations
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# make `env` importable regardless of layout (repo checkout or /gym in container)
+for _up in (1, 2, 3):
+    _cand = os.path.abspath(os.path.join(os.path.dirname(__file__), *([".."] * _up)))
+    if os.path.isdir(os.path.join(_cand, "env")):
+        sys.path.insert(0, _cand)
+        break
 from env.core import Environment, Action, Observation, Outcome, ActionError
 
 

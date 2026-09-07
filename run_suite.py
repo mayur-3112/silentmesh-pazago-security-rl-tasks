@@ -22,7 +22,8 @@ REQUIRED_DOCKER = ["task.yaml", "Dockerfile", "docker-compose.yaml", "solution.s
                    "run-tests.sh", os.path.join("tests", "test_outputs.py"),
                    os.path.join("env", "gen", "build_env.py")]
 REQUIRED_ENV = ["task.yaml", "scenario.py", "oracle.py", "adversarial.py",
-                "local_test.py", "DOCUMENTATION.md"]
+                "local_test.py", "DOCUMENTATION.md", "gym.py", "Dockerfile",
+                "docker-compose.yaml", "run-tests.sh", "AGENT.md"]
 
 
 def _task_kind(task):

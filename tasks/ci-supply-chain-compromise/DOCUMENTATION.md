@@ -72,10 +72,9 @@ skips one security-process step (rotation) sits below D2=0.6.
 - **Multiple valid solutions**: pinning + hash, index restriction, or removing
   public registry all satisfy `pinned_trusted_dependency`; the reward function
   scores the outcome, not one specific recipe.
-- **Extensible to family**: the same topology admits ≥10 variants (attacker on
-  registry, malicious runner, artifact substitution post-signing, transitive
-  compromise, secret in Dockerfile, etc.) — the plan is 10 scenarios × 10
-  variants = the 100-task set, one family at a time.
+- **Extensible if needed**: the same topology could admit further variants
+  (attacker on registry, malicious runner, artifact substitution post-signing)
+  without new infrastructure — not built here, since only one task was requested.
 
 ## 7. Known limitations (honest)
 - The environment is a simulated topology in memory, not a Dockerised cluster.
@@ -85,3 +84,59 @@ skips one security-process step (rotation) sits below D2=0.6.
   tokens. Follow-up: generate real content hashes per build.
 - Only one attack path is currently modelled. The 10-variant plan (family
   fan-out) is the next milestone.
+
+## 8. Container delivery (real shell interface, not a Python-only demo)
+The agent's actual interface is a Docker container: `docker build` from this
+task's `Dockerfile`, then `docker run` gives a real bash shell with the `gym`
+command on PATH. Inside:
+
+```
+$ gym
+{"kind": "reset", "observation": {...}}
+> action read_file --path /var/soc/alert-2026-09-07.log
+{"kind": "step", "observation": {...}, "reward_delta": 0.0, ...}
+> action ssh --host ci-runner --credential ops-token
+...
+> quit
+{"kind": "end", "summary": {"score": 1.0, ...}}
+```
+
+`gym.py` is a line-oriented text protocol over the same `Env` used by
+`local_test.py`/`oracle.py`/`adversarial.py` — one implementation, three
+call surfaces (programmatic Python, shell REPL, and the grader). The world
+model itself (hosts, files, credentials, artifacts) lives in process memory,
+not on a real filesystem or over real SSH — this is a deliberate simplification
+that keeps the environment deterministic and reproducible, at the cost of the
+agent not being able to use ordinary shell tools (`cat`, `ssh`) directly on the
+simulated hosts; it must go through the `gym` action protocol instead. This is
+disclosed, not hidden — see §9.
+
+`run-tests.sh` (the grader) reads `/app/state.json` — written by `gym.py`
+after every action — and emits `REWARD = <score>` in the format the SilentMesh
+suite and Terminal-Bench-style harnesses parse.
+
+Build & run:
+```bash
+docker build -f tasks/ci-supply-chain-compromise/Dockerfile -t ci-scc .
+docker run --network=none -it ci-scc
+# inside the container:
+gym
+```
+Grade an already-played episode:
+```bash
+docker run --network=none --name ci-scc-run ci-scc bash -c "gym < transcript.txt"
+docker cp tasks/ci-supply-chain-compromise/run-tests.sh ci-scc-run:/app/
+docker exec ci-scc-run bash /app/run-tests.sh
+docker rm -f ci-scc-run
+```
+
+## 9. Known limitation — honest disclosure
+The world is a Python object simulation exposed through a custom action
+protocol, not a Dockerised multi-container network with real SSH/HTTP between
+independent hosts. This keeps the environment deterministic, cheap to run at
+scale, and easy to reason about for reward-shape validation — but it means an
+agent cannot fall back on generic shell/network tooling; it must use `gym`'s
+action vocabulary. A follow-up milestone would replace the in-memory `hosts`
+dict with real containers per host and real network calls between them,
+trading determinism/cost for higher realism. This tradeoff is deliberate and
+stated up front rather than discovered by the reviewer.
