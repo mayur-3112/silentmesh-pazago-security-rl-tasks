@@ -27,13 +27,15 @@ rollout/scoring against Hy4-Preview and SOTA models runs on the lab's harness.
 - `DOCUMENTATION.md` — curation history, difficulty/rollout plan, failure-mode analysis, QA
 
 ## Testing
-See `HOW-TO-TEST.md`. Quickest path (no Docker needed):
+See `HOW-TO-TEST.md`. Fastest full check (no Docker needed) — validates every task,
+static + dynamic:
 
 ```bash
-python tasks/nw-mirror-tamper-v2/local_test.py
+python run_suite.py
 ```
 
-Expected: `REWARD = 13/13 = 1.000` (oracle solves it; verifier agrees).
+Expected last line: `SUITE RESULT: ALL PASS`. Runs in CI on every push. To test one
+task alone: `python tasks/nw-mirror-tamper-v2/local_test.py`.
 
 ## Status
 All tasks verified end-to-end locally (environment builds, oracle solves, verifier

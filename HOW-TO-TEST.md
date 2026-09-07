@@ -3,6 +3,16 @@
 Four levels, easiest first. Levels 1–2 need only Python; 3 needs Docker; 4 needs the
 lab's model harness.
 
+## 0. Whole-repo test suite (recommended first check)
+```bash
+python run_suite.py
+```
+Validates **every** task at once: builds each env, runs its oracle to full reward,
+and statically checks spec compliance (instruction word count, no headings/steering,
+absolute paths, Dockerfile pinning, report-key parity). Expected last line:
+`SUITE RESULT: ALL PASS`. This also runs automatically in CI on every push
+(`.github/workflows/ci.yml`).
+
 ## 1. Logic test — no Docker (Windows/Mac/Linux, just Python)
 ```bash
 python tasks/nw-mirror-tamper-v2/local_test.py
