@@ -1,13 +1,14 @@
-# Dataset manifest — SilentMesh security RL tasks
+# Dataset manifest — SilentMesh security RL tasks (cyber gyms)
 # Category: Security / Cyber exploits (supply-chain attacks)
 name: silentmesh-security-supplychain
-version: 0.1.0
+version: 0.2.0
 harness_map:
   claude-family: claude-code
   gpt-family: codex
   hy4-preview-think: claude-code
 grading:
   metric: mean_reward
+  scoring: capability-ladder (partial credit per rung)
   gates: [D1, D2, D3, D4]
   d1_hy4_preview_think_mean_reward_max: 0.4
   d2_sota_mean_reward_max: 0.6
@@ -18,11 +19,19 @@ tasks:
     difficulty: hard
     primary_cwe: CWE-494
     owasp: A08:2021
+    trigger: resolve
   - id: nw-mirror-tamper-v1
     difficulty: medium
     primary_cwe: CWE-506
     owasp: A06:2021
+    trigger: import
   - id: nw-mirror-tamper-v2
     difficulty: hard
     primary_cwe: CWE-506
     owasp: A06:2021
+    trigger: import
+  - id: pickle-policy-rce
+    difficulty: hard
+    primary_cwe: CWE-502
+    owasp: A08:2021
+    trigger: deserialization

@@ -35,11 +35,27 @@ harness; this repository ships everything required to run it.
 
 ## Tasks
 
-| ID | Difficulty | CWE | OWASP | Attack mechanism |
-|---|---|---|---|---|
-| `nw-mirror-tamper-v2` | hard | CWE-506 | A06:2021 | Post-build tamper, integrity-manifest detection (flagship) |
-| `dep-confusion-hijack` | hard | CWE-494 | A08:2021 | Dependency confusion, hash-pin remediation |
-| `nw-mirror-tamper-v1` | medium | CWE-506 | A06:2021 | Post-build tamper (baseline; shows the v1→v2 hardening) |
+Three distinct trigger surfaces across CWE-mapped classes:
+
+| ID | Difficulty | CWE | OWASP | Trigger | Attack mechanism |
+|---|---|---|---|---|---|
+| `nw-mirror-tamper-v2` | hard | CWE-506 | A06:2021 | import | Post-build tamper, integrity-manifest detection (flagship) |
+| `pickle-policy-rce` | hard | CWE-502 | A08:2021 | deserialization | Unsafe deserialization RCE, capability-ladder + randomized challenge-response |
+| `dep-confusion-hijack` | hard | CWE-494 | A08:2021 | resolve | Dependency confusion, hash-pin remediation |
+| `nw-mirror-tamper-v1` | medium | CWE-506 | A06:2021 | import | Post-build tamper (baseline; shows the v1→v2 hardening) |
+
+Design follows the ExploitBench pattern: **capability-ladder rewards** (graded rungs,
+partial credit) and a **deterministic oracle with per-build randomized
+challenge-response** so answers cannot be memorized or hardcoded (see
+`pickle-policy-rce`).
+
+### Authoring new gyms
+`templates/task-template/` + `tools/new_task.py` scaffold a spec-compliant skeleton;
+`run_suite.py` is the gate every new task must pass before commit (see `CONTRIBUTING.md`).
+
+```bash
+python tools/new_task.py <task-id> "Title"
+```
 
 ## Quick start
 

@@ -1,0 +1,23 @@
+instruction: |
+  __ONE_PARAGRAPH_SCENARIO__ Absolute paths only, e.g. /app/target. State the
+  outcome, never the method.
+
+  Write a findings report as a single JSON object at the absolute path
+  /app/report.json with exactly these keys:
+    __field_a__  - what it is
+    __field_b__  - what it is
+    primary_cwe  - the CWE identifier (form "CWE-###")
+    owasp_a      - the OWASP Top 10 2021 category (form "A##:2021")
+  Then __REMEDIATION_OUTCOME__. The environment has no outbound network access;
+  recover every value from the files on disk alone.
+
+author_email: mayur311agarwal@gmail.com
+category: security
+difficulty: hard
+tags:
+  - __cwe-xxx__
+  - __owasp-axx__
+  - supply-chain
+max_agent_timeout_sec: 3600
+max_test_timeout_sec: 300
+run_tests_in_same_shell: false
