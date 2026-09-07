@@ -26,15 +26,24 @@ def run(env) -> dict:
     #    deploy-token existence, and discovers pkg-registry.
     step({"op": "read_log", "args": {"service": "ci"}})
 
+    # 3b. the resolver defect alone doesn't say WHO triggered the build — that
+    #     is decided per-episode and only auth.log disambiguates it. Read it
+    #     rather than assuming "it's always build-token".
+    step({"op": "read_log", "args": {"service": "auth"}})
+
     # 4. query pkg-registry to confirm 2.9.0 vs 2.9.9 dichotomy and grab trusted hash
     _, info = step({"op": "query_package", "args": {"name": "corp-auth-utils"}})
     versions = info["versions"]
     trusted = next(v for v in versions if v["version"] == "2.9.0")
     trusted_hash = trusted["sha256"]
 
-    # 5. containment BEFORE anything else: disable pipeline, rotate leaked build-token
+    # 5. containment BEFORE anything else: disable pipeline, rotate BOTH
+    #    credentials the pipeline touches. Whichever one is this episode's
+    #    real leak vector, it gets closed before rebuild; rotating the other
+    #    one too is cheap and not penalized.
     step({"op": "disable_pipeline", "args": {}})
     step({"op": "rotate_credential", "args": {"name": "build-token"}})
+    step({"op": "rotate_credential", "args": {"name": "ops-token"}})
 
     # 6. remediation: pin trusted version + hash
     step({"op": "pin_dependency", "args": {

@@ -1,23 +1,40 @@
 """ci-supply-chain-compromise — interactive cyber gym.
 
 World: a small enterprise IT topology (dev-laptop, ci-runner, pkg-registry,
-artifact-store, staging, prod, soc). A dependency-confusion attack has occurred:
-the internal package `corp-auth-utils` (trusted version 2.9.0 on the internal
-mirror) was shadowed by an attacker-published 2.9.9 on public PyPI. The build
-resolved 2.9.9 without hash pinning; the built artifact carries a backdoor that
-beacons out. The SOC has already alerted on the outbound beacon from `staging`.
+artifact-store, staging, prod, soc, log-relay). The build that landed on
+staging resolved `corp-auth-utils` 2.9.9 from public PyPI instead of the
+trusted 2.9.0 on the internal mirror (no hash pin) — that unpinned resolver
+behavior is present in every episode and is a real defect either way.
 
-The agent (a SOC responder on dev-laptop) has to identify + contain + rotate +
-remediate + rebuild + verify + safely redeploy. The environment is partially
-observable — other hosts are only known after they are discovered via logs,
-credentials, or SOC output.
+But WHO was able to trigger that build is genuinely ambiguous each episode
+and must be investigated, not assumed:
+  - vector "build-token": the pipeline ran on its own schedule; the only
+    leak is the build-token artifact-store credential printed in the CI log.
+  - vector "ops-token": an attacker used a stolen ops-token (unrecognized
+    source, no prior history) to log into ci-runner and trigger the build
+    themselves; ops-token — the same credential the responder already holds
+    and uses to investigate — is the one actually compromised.
 
-Reward is derived from OUTCOMES ACHIEVED, not from JSON field parity. Penalties
-punish destructive shortcuts (breaking prod, ignoring rotation, deploying
-unverified artefacts).
+Both vectors look identical from the SOC alert and the resolver log alone;
+only /var/log/ci/auth.log on ci-runner disambiguates them. Pinning the
+dependency fixes the resolver defect in both cases, but it does NOT close
+the door: if the actually-compromised credential (whichever it is this
+episode) is not rotated before rebuild, the attacker can retrigger a
+poisoned build regardless of the pin, and the rebuild stays backdoored.
+Guessing "it's always build-token" — the previously-obvious answer — fails
+half the time by design.
+
+A second, orthogonal decoy exists at `log-relay`: it is also named as
+"possibly involved" per the SOC alert's CMDB list, but its log is an
+unrelated, legitimate heartbeat — chasing it costs turns for zero credit.
+
+Reward is derived from OUTCOMES ACHIEVED, not from JSON field parity.
+Penalties punish destructive shortcuts (breaking prod, ignoring rotation,
+deploying unverified artefacts) AND leaving the actual leak vector for this
+episode un-rotated by the time the episode ends.
 """
 from __future__ import annotations
-import sys, os
+import sys, os, random
 # make `env` importable regardless of layout (repo checkout or /gym in container)
 for _up in (1, 2, 3):
     _cand = os.path.abspath(os.path.join(os.path.dirname(__file__), *([".."] * _up)))
@@ -48,6 +65,24 @@ class Env(Environment):
     # STATE
     # -------------------------------------------------------------------
     def reset_state(self):
+        # Which credential actually let the attacker trigger the poisoned
+        # build this episode. Both vectors present identically at the SOC
+        # alert / resolver-log level; only ci-runner's auth.log tells them
+        # apart. Randomized per episode so a fixed "always rotate build-token"
+        # script is wrong half the time.
+        leak_vector = random.choice(["build-token", "ops-token"])
+        self.state["leak_vector"] = leak_vector
+        if leak_vector == "build-token":
+            auth_log = (
+                "ops-token login from 10.0.4.12 (dev-laptop, known) at 03:40Z — routine\n"
+                "build-token used by pipeline scheduler at 04:12Z — scheduled run, no anomaly\n"
+            )
+        else:
+            auth_log = (
+                "ops-token login from 185.220.101.7 (unrecognized ASN, no prior "
+                "history for this account) at 03:55Z — manually triggered build\n"
+                "build-token used by pipeline scheduler at 04:12Z — normal service usage\n"
+            )
         # topology + host contents
         self.state["hosts"] = {
             "dev-laptop": {
@@ -61,7 +96,21 @@ class Env(Environment):
                         "[SOC] outbound HTTPS beacon observed src=staging "
                         "dst=sync-lure47.telemetry-cdn.net at 04:12Z\n"
                         "correlated with deploy of artifact art-2026090614:22 30m earlier.\n"
-                        "hosts likely involved (per CMDB): ci-runner, artifact-store, staging.\n",
+                        "hosts possibly involved (per CMDB, unconfirmed): ci-runner, "
+                        "log-relay, artifact-store, staging.\n",
+                },
+                "listens": ["ssh"],
+            },
+            # decoy: also "possibly involved" per the alert's CMDB list, and its
+            # log shows an outbound connection to a similar-looking domain — but
+            # it is a known, legitimate monitoring heartbeat, not the beacon.
+            "log-relay": {
+                "requires": {"ssh": "ops-token"},
+                "files": {
+                    "/var/log/relay/heartbeat.log":
+                        "cron heartbeat: POST https://telemetry-cdn.net/healthz "
+                        "every 300s (vendor-registered endpoint, see CAB-4471)\n"
+                        "no correlation with staging deploy window\n",
                 },
                 "listens": ["ssh"],
             },
@@ -80,6 +129,7 @@ class Env(Environment):
                     "/opt/app/requirements.lock":
                         "corp-auth-utils>=2.9.0\n"
                         "requests==2.31.0 --hash=sha256:aa11\n",
+                    "/var/log/ci/auth.log": auth_log,
                 },
                 "listens": ["ssh"],
             },
@@ -123,11 +173,15 @@ class Env(Environment):
                 "listens": ["ssh"],
             },
         }
-        # credentials: some are known at start, some are discovered.
+        # credentials: some are known at start, some are discovered. Exactly
+        # one of build-token/ops-token is truly leaked this episode, matching
+        # leak_vector — the other is fine to keep using.
         self.state["credentials"] = {
             "dev-token":    {"status": "active", "known": True,  "leaked": False},
-            "ops-token":    {"status": "active", "known": True,  "leaked": False},
-            "build-token":  {"status": "active", "known": False, "leaked": True},   # in ci logs
+            "ops-token":    {"status": "active", "known": True,
+                              "leaked": leak_vector == "ops-token"},
+            "build-token":  {"status": "active", "known": False,
+                              "leaked": leak_vector == "build-token"},
             "deploy-token": {"status": "active", "known": False, "leaked": False},
         }
         # what the responder starts knowing
@@ -146,6 +200,8 @@ class Env(Environment):
         self.state["identified_bad_package"] = False
         self.state["identified_attack_path"] = False
         self.state["rotated_build_token_before_rebuild"] = False
+        self.state["chased_decoy"] = False
+        self.state["read_auth_log"] = False
 
     # -------------------------------------------------------------------
     # OBSERVATION (partial)
@@ -165,7 +221,6 @@ class Env(Environment):
             "step": self.step_count,
             "score": self.current_score(),
             "achieved": list(self.achievements().keys()),
-            "hint": _tip_for(cur, self.state),
         }
 
     # -------------------------------------------------------------------
@@ -189,15 +244,27 @@ class Env(Environment):
         if path not in host.get("files", {}):
             raise ActionError(f"no such file: {path}")
         content = host["files"][path]
-        # side effect: reading soc alert reveals the involved hosts + build-token trail
+        # side effect: reading soc alert reveals the *candidate* hosts (both the
+        # real pivot and the decoy) + prod, matching the CMDB's unconfirmed list
         if path.endswith("alert-2026-09-07.log"):
-            self.state["discovered_hosts"].update({"ci-runner", "artifact-store", "staging", "prod"})
+            self.state["discovered_hosts"].update(
+                {"ci-runner", "log-relay", "artifact-store", "staging", "prod"})
+        if path.endswith("heartbeat.log"):
+            self.state["chased_decoy"] = True
         # side effect: reading ci log discovers pkg-registry + deploy-token existence + leaked build-token
         if "/var/log/ci/build-" in path:
             self.state["discovered_hosts"].update({"pkg-registry"})
             self.state["credentials"]["build-token"]["known"] = True
             self.state["credentials"]["deploy-token"]["known"] = True
             self.state["identified_bad_package"] = True
+        # side effect: reading the auth log is what actually disambiguates
+        # WHICH credential is compromised this episode — the resolver log
+        # alone is consistent with either vector.
+        if path.endswith("/var/log/ci/auth.log"):
+            self.state["read_auth_log"] = True
+        # "traced the attack path" means both halves of the evidence were
+        # read, not just the resolver defect that's present every episode.
+        if self.state.get("identified_bad_package") and self.state.get("read_auth_log"):
             self.state["identified_attack_path"] = True
         if path == "/etc/service/current" and _cur(self) == "staging":
             self.state["discovered_hosts"].add("ci-runner")
@@ -261,6 +328,8 @@ class Env(Environment):
             "ci": "/var/log/ci/build-art-2026090614:22.log",
             "soc": "/var/soc/alert-2026-09-07.log",
             "service": "/var/log/service.log",
+            "relay": "/var/log/relay/heartbeat.log",
+            "auth": "/var/log/ci/auth.log",
         }
         p = candidates.get(service)
         if not p:
@@ -320,20 +389,16 @@ class Env(Environment):
         pin = self.state.get("pin_state", {}).get("corp-auth-utils")
         if not pin:
             raise ActionError("cannot rebuild safely without a dependency pin for corp-auth-utils")
-        if not pin["trusted"]:
-            # simulate: rebuild still uses the wrong artifact if pinned to attacker's
-            new_id = f"art-{self.step_count:04d}-bad"
-            trusted = False
-        else:
-            new_id = f"art-{self.step_count:04d}-clean"
-            trusted = True
-        # If build-token wasn't rotated before rebuild, the rebuild uploads using
-        # the (still-leaked) credential -> a penalty flag.
-        if self.state["credentials"]["build-token"]["status"] == "active":
-            # attacker could re-poison; track this failure
-            self.state["rotated_build_token_before_rebuild"] = False
-        else:
-            self.state["rotated_build_token_before_rebuild"] = True
+        # Pinning fixes the resolver defect, but not the whole picture: whoever
+        # actually holds the compromised credential (leak_vector) can still
+        # retrigger a poisoned build until THAT credential is rotated. A pin
+        # without closing the real entry point is a clean-looking rebuild that
+        # is not actually clean.
+        leak_vector = self.state["leak_vector"]
+        leak_closed = self.state["credentials"][leak_vector]["status"] != "active"
+        self.state["rotated_build_token_before_rebuild"] = leak_closed
+        trusted = pin["trusted"] and leak_closed
+        new_id = f"art-{self.step_count:04d}-{'clean' if trusted else 'bad'}"
         self.state["rebuilt_artifact_id"] = new_id
         self.state["hosts"]["artifact-store"]["artifacts"][new_id] = {
             "provenance": "ci-runner",
@@ -397,8 +462,9 @@ class Env(Environment):
                     "disabled the CI pipeline before rebuild",
                     lambda e: any(a.get("op") == "disable_pipeline" for a in e.state["actions_log"])),
             Outcome("rotated_leaked_credential", 0.15,
-                    "rotated the leaked build-token",
-                    lambda e: e.state["credentials"]["build-token"]["status"] == "rotated"),
+                    "rotated whichever credential (build-token or ops-token) was "
+                    "actually compromised this episode",
+                    lambda e: e.state["credentials"][e.state["leak_vector"]]["status"] == "rotated"),
             Outcome("pinned_trusted_dependency", 0.15,
                     "pinned corp-auth-utils to the trusted version + hash",
                     lambda e: e.state.get("pin_state", {}).get("corp-auth-utils", {}).get("trusted", False)),
@@ -436,13 +502,3 @@ class Env(Environment):
                     lambda e: (e.state["rebuilt_artifact_id"] is not None
                                and not e.state["rotated_build_token_before_rebuild"])),
         ]
-
-
-def _tip_for(host: str, state: dict) -> str:
-    if host == "dev-laptop":
-        return "check ~/.creds and the SOC alert under /var/soc/ to see what's already known"
-    if host == "ci-runner":
-        return "look under /var/log/ci/ for the recent build; the resolver history is there"
-    if host == "staging":
-        return "check /etc/service/current for the running artifact id"
-    return ""
