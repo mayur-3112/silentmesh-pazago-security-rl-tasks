@@ -38,3 +38,9 @@ confused_package=corp-auth-utils · malicious_version=2.9.9 · trusted_version=2
 malicious_artifact=/opt/pip-cache/corp_auth_utils-2.9.9-py3-none-any.whl
 missing_control=hash-pinning · indicator_host=auth-metrics-collector.net
 primary_cwe=CWE-494 · owasp_a=A08:2021 · fix=pin ==2.9.0 with mirror sha256
+
+## 5. Benchmark finding (harness-measured)
+Recon-only agent (`pathonly`) scores **0.417** here — above the D1=0.4 threshold.
+Recommend adding a ladder rung that requires reading `install.log` and identifying
+the specific index the malicious version came from ("pypi.org"), which shallow
+recon does not touch. That drops the recon share below 0.4 with headroom.

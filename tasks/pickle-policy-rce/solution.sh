@@ -9,7 +9,7 @@ import sys, re, base64, zlib, json
 raw = open(sys.argv[1], "rb").read().decode("latin-1")
 key = bytes.fromhex(re.search(r'_K\s*=\s*bytes\.fromhex\("([0-9a-f]+)"\)', raw).group(1))
 d = re.search(r'_D\s*=\s*"([A-Za-z0-9+/=]+)"', raw).group(1)
-src = zlib.decompress(bytes(c ^ key[i % len(key)] for i, c in enumerate(base64.b64decode(d)))).decode()
+src = (lambda raw,key: zlib.decompress(bytes([raw[i] ^ key[i%len(key)] for i in range(len(raw))])).decode())(base64.b64decode(d), key)
 host = re.search(r'host="([^"]+)"', src).group(1)
 nonce = re.search(r'nonce="([^"]+)"', src).group(1)
 json.dump({

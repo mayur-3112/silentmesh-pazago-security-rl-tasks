@@ -78,3 +78,10 @@ solved at 1.0. Planned protocol:
 compromised_package=geocache-lite · malicious_path=<site-packages>/geocache/_telemetry.py
 trigger=import · c2_host=sync.pkg-telemetry-cdn.net · exfil_scheme=https
 primary_cwe=CWE-506 · owasp_a=A06:2021
+
+## 5. Benchmark finding (harness-measured)
+Recon-only agent (`pathonly`) scores **0.400** here — exactly at the D1 threshold.
+Recommend adding one to two extra ladder rungs that require decoding/reasoning
+(e.g. encoding-scheme identification, staged-payload structure) so the recon share
+drops below 0.3. This is the v1 draft; v2 (`nw-mirror-tamper-v2`) already has a
+healthier 0.308 floor and should be the flagship.

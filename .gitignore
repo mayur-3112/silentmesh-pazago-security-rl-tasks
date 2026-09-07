@@ -5,3 +5,6 @@ __pycache__/
 nwmt_*/
 study/
 requirement-brief.html
+bench/last_run.json
+bench/__pycache__/
+bench/agents/__pycache__/
