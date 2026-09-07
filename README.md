@@ -1,43 +1,63 @@
 # SilentMesh — Security RL Task Environments
 
-CWE/OWASP-mapped, long-horizon reinforcement-learning environments for training a
-security model, built to the Terminal-Bench 4 / "Long-horizon tasks" procurement
-spec. Category: **Security — Cyber exploits (supply-chain attacks)**.
+[![task-suite](https://github.com/mayur-3112/silentmesh-rl-tasks/actions/workflows/ci.yml/badge.svg)](https://github.com/mayur-3112/silentmesh-rl-tasks/actions/workflows/ci.yml)
 
-We build the **environment and the reward function** (the gym and the referee); the
-rollout/scoring against Hy4-Preview and SOTA models runs on the lab's harness.
+Long-horizon, CWE/OWASP-mapped reinforcement-learning environments for training a
+security model, authored to the Terminal-Bench 4 procurement specification.
+**Category: Security — Cyber exploits (supply-chain attacks).**
 
-## What's here
+We deliver the **environment and the reward function** (the gym and the referee).
+Difficulty scoring against Hy4-Preview and SOTA models runs on the customer's rollout
+harness; this repository ships everything required to run it.
 
-| Path | What it is |
-|---|---|
-| `requirement-brief.html` | Plain-language brief of the client requirement (open in a browser) |
-| `study/` | Foundation study guide + method walkthroughs (start at `study/README.md`) |
-| `tasks/nw-mirror-tamper-v2/` | **Flagship sample** — post-build tamper, CWE-506 / OWASP A06, frontier-hardened |
-| `tasks/dep-confusion-hijack/` | Dependency confusion, CWE-494 / OWASP A08 |
-| `tasks/nw-mirror-tamper-v1/` | The un-hardened first draft (kept to show the v1→v2 strengthening) |
+## Repository layout
 
-## Each task follows the same contract
-- `task.yaml` — the instruction (outcome-only, ≤1500 words, absolute paths, no steering)
-- `Dockerfile` — pinned base + pinned tooling; builds the environment
-- `env/gen/build_env.py` — deterministic environment generator (deleted from the final image)
-- `tests/test_outputs.py` — the verifier / reward function (partial credit, anti-reward-hacking)
-- `solution.sh` — reference oracle (graders only; proves solvability)
-- `run-tests.sh` — grader entrypoint
-- `DOCUMENTATION.md` — curation history, difficulty/rollout plan, failure-mode analysis, QA
-
-## Testing
-See `HOW-TO-TEST.md`. Fastest full check (no Docker needed) — validates every task,
-static + dynamic:
-
-```bash
-python run_suite.py
+```
+.
+├── dataset.yaml            # dataset manifest: tasks, grading gates, harness map
+├── run_suite.py            # validates every task (static compliance + oracle solve)
+├── Makefile                # make suite | test | build | verify
+├── tasks/
+│   └── <task-id>/
+│       ├── task.yaml           # instruction + metadata (standard schema)
+│       ├── Dockerfile          # pinned, reproducible environment
+│       ├── docker-compose.yaml # standard run definition
+│       ├── env/gen/build_env.py# deterministic environment generator
+│       ├── tests/test_outputs.py# verifier / reward function
+│       ├── solution.sh         # reference oracle (graders only)
+│       ├── run-tests.sh        # grader entrypoint
+│       ├── local_test.py       # Docker-free local runner
+│       └── DOCUMENTATION.md     # curation history, difficulty & failure-mode analysis
+├── CONTRIBUTING.md         # task-authoring standard (enforced by run_suite.py)
+├── CODEOWNERS · LICENSE
+└── .github/workflows/ci.yml# runs the suite on every push
 ```
 
-Expected last line: `SUITE RESULT: ALL PASS`. Runs in CI on every push. To test one
-task alone: `python tasks/nw-mirror-tamper-v2/local_test.py`.
+## Tasks
+
+| ID | Difficulty | CWE | OWASP | Attack mechanism |
+|---|---|---|---|---|
+| `nw-mirror-tamper-v2` | hard | CWE-506 | A06:2021 | Post-build tamper, integrity-manifest detection (flagship) |
+| `dep-confusion-hijack` | hard | CWE-494 | A08:2021 | Dependency confusion, hash-pin remediation |
+| `nw-mirror-tamper-v1` | medium | CWE-506 | A06:2021 | Post-build tamper (baseline; shows the v1→v2 hardening) |
+
+## Quick start
+
+```bash
+pip install -r requirements-dev.txt
+make suite          # expected last line: SUITE RESULT: ALL PASS
+```
+
+Single task, no Docker: `make test T=nw-mirror-tamper-v2`
+In the real container: `make verify T=nw-mirror-tamper-v2` (requires Docker).
+Full testing guide: `HOW-TO-TEST.md`.
+
+## Acceptance model (`dataset.yaml`)
+Graded on **mean reward**, four conjunctive gates: D1 Hy4-Preview (think) ≥8 rollouts
+mean ≤ 0.4 · D2 SOTA ≥5 rollouts mean ≤ 0.6 · D3 mean(Hy) < mean(SOTA) · D4 SOTA
+variance ≠ 0. Real rollout figures are produced on the official harness.
 
 ## Status
-All tasks verified end-to-end locally (environment builds, oracle solves, verifier
-agrees, anti-cheat checks hold). Real mean-reward difficulty numbers (D1–D4) are
-produced on the official rollout harness — not fabricated here.
+All tasks pass the suite (static compliance + oracle solve) locally and in CI. The
+in-container Docker build and the live mean-reward rollouts are the two steps that run
+on the customer's infrastructure.

@@ -18,8 +18,8 @@ import os, re, sys, subprocess, glob
 ROOT = os.path.dirname(os.path.abspath(__file__))
 TASKS = sorted(d for d in glob.glob(os.path.join(ROOT, "tasks", "*")) if os.path.isdir(d))
 STEER = ["step by step", "you are an expert", "please think", "as an expert"]
-REQUIRED = ["task.yaml", "Dockerfile", "solution.sh", "run-tests.sh",
-            os.path.join("tests", "test_outputs.py"),
+REQUIRED = ["task.yaml", "Dockerfile", "docker-compose.yaml", "solution.sh",
+            "run-tests.sh", os.path.join("tests", "test_outputs.py"),
             os.path.join("env", "gen", "build_env.py")]
 
 
@@ -28,15 +28,15 @@ def read(p):
 
 
 def instruction_of(task):
-    # extract the description: block from task.yaml without a yaml dep
+    # extract the standard `instruction: |` block from task.yaml without a yaml dep
     txt = read(os.path.join(task, "task.yaml"))
-    m = re.search(r"description:\s*\|\s*\n(.*?)(?:\nmetadata:|\Z)", txt, re.S)
+    m = re.search(r"^instruction:\s*\|\s*\n(.*?)(?:^\w[\w-]*:|\Z)", txt, re.S | re.M)
     if not m:
         return ""
     lines = m.group(1).splitlines()
     indents = [len(l) - len(l.lstrip()) for l in lines if l.strip()]
     base = min(indents) if indents else 0
-    return "\n".join(l[base:] for l in lines)
+    return "\n".join(l[base:] if l.strip() else "" for l in lines)
 
 
 def report_keys_from_instruction(instr):
