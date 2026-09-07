@@ -1,0 +1,49 @@
+# Terminal-Bench task definition
+# Category: Security - supply-chain attack (post-build tamper) / CWE-OWASP mapping
+descriptions:
+  - key: base
+    description: |
+      A Python 3.11 service is installed at /app/service and imports the distribution
+      geocache-lite from the active environment's site-packages at
+      /usr/local/lib/python3.11/site-packages. During an egress review a repeated
+      outbound connection to an unrecognized host was seen from the service process
+      at start-up; the host appears nowhere in the first-party source under
+      /app/service/src.
+
+      One file inside the installed geocache-lite was modified after the distribution
+      was built, and no longer matches the integrity manifest recorded for that
+      distribution. The organization's internal mirror holds the untouched build of
+      geocache-lite under /opt/mirror/geocache-lite-1.4.2. The modification adds code
+      that runs automatically when the package is imported and stages an obfuscated
+      payload that performs the observed connection.
+
+      Write a findings report as a single JSON object at the absolute path
+      /app/report.json with exactly these keys:
+        compromised_package - the affected PyPI distribution name
+        malicious_path      - absolute path of the single modified file
+        trigger             - one of: import, install, runtime-entrypoint
+        c2_host             - the fully-qualified host the staged payload contacts
+        exfil_scheme        - the URL scheme the staged payload uses
+        primary_cwe         - the CWE identifier (form "CWE-###") most precisely
+                              classifying the injected-code weakness
+        owasp_a             - the OWASP Top 10 2021 category identifier (form
+                              "A##:2021") for the weakness
+        recorded_hash       - the SHA-256 hex digest the integrity manifest records
+                              for the modified file (its untouched form)
+        actual_hash         - the SHA-256 hex digest of the modified file as
+                              currently installed
+      Then restore the affected file so that the installed distribution matches its
+      recorded integrity manifest again, importing the package executes no staged
+      payload, and the package's documented functionality is unchanged. The
+      environment has no outbound network access; recover every value from the files
+      on disk alone.
+metadata:
+  category: security
+  subcategory: supply-chain-post-build-tamper
+  tags: [cwe-506, owasp-a06, integrity-manifest, malware-analysis, forensics]
+  author_harness_map:
+    claude-family: claude-code
+    gpt-family: codex
+    hy4-preview-think: claude-code
+  max_turns: 500
+  reward: mean

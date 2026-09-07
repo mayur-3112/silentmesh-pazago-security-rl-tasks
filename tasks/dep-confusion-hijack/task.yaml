@@ -1,0 +1,53 @@
+# Terminal-Bench task definition
+# Category: Security - supply-chain attack (dependency confusion) / CWE-OWASP mapping
+descriptions:
+  - key: base
+    description: |
+      A service build resolved its dependency corp-auth-utils and installed it into
+      the active environment's site-packages at
+      /usr/local/lib/python3.11/site-packages. The build artifacts are under
+      /app/build: the resolver output is at /app/build/install.log and the pinned
+      dependency set is at /app/build/requirements.lock. An internal package mirror
+      publishes the organization's own build of corp-auth-utils, with its index at
+      /opt/mirror/index.json. Downloaded distribution files are cached under
+      /opt/pip-cache.
+
+      The version that was installed did not come from the internal mirror. It
+      carries code that runs automatically when the module is imported and that
+      stages a hidden second-stage payload contacting an external host. The
+      installed version differs from the version the organization publishes, and the
+      dependency set contains no integrity constraint that would have prevented the
+      substitution.
+
+      Write a findings report as a single JSON object at the absolute path
+      /app/report.json with exactly these keys:
+        confused_package   - the affected PyPI distribution name
+        malicious_version  - the version string that was actually installed
+        trusted_version    - the version the internal mirror publishes
+        malicious_artifact - absolute path of the cached distribution file that
+                             carries the injected code
+        missing_control    - the integrity control absent from the dependency set,
+                             expressed as one of: hash-pinning, version-pinning,
+                             index-restriction
+        indicator_host     - the fully-qualified external host the staged payload
+                             contacts
+        primary_cwe        - the CWE identifier (form "CWE-###") that most precisely
+                             classifies the weakness
+        owasp_a            - the OWASP Top 10 2021 category identifier (form
+                             "A##:2021") for the weakness
+      Then edit /app/build/requirements.lock so that re-resolving corp-auth-utils can
+      only select the organization's trusted build: constrain it to the trusted
+      version and add the integrity hash that the internal mirror publishes for it.
+      Leave any other entry in the file unchanged, and keep corp_auth_utils
+      importable. The environment has no outbound network access; recover every value
+      from the files on disk alone.
+metadata:
+  category: security
+  subcategory: supply-chain-dependency-confusion
+  tags: [cwe-494, owasp-a08, dependency-confusion, integrity, lockfile]
+  author_harness_map:
+    claude-family: claude-code
+    gpt-family: codex
+    hy4-preview-think: claude-code
+  max_turns: 500
+  reward: mean
