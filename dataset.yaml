@@ -1,37 +1,36 @@
-# Dataset manifest — SilentMesh security RL tasks (cyber gyms)
-# Category: Security / Cyber exploits (supply-chain attacks)
+# Dataset manifest — SilentMesh security RL tasks
+# Category: Security / Cyber exploits (supply-chain attacks), CWE/OWASP-mapped
 name: silentmesh-security-supplychain
-version: 0.2.0
+version: 1.0.0
 harness_map:
   claude-family: claude-code
   gpt-family: codex
   hy4-preview-think: claude-code
 grading:
   metric: mean_reward
-  scoring: capability-ladder (partial credit per rung)
+  reward: weighted_fraction_of_independent_checks  # payload-analysis items weighted 3-5, IR items 1
   gates: [D1, D2, D3, D4]
   d1_hy4_preview_think_mean_reward_max: 0.4
   d2_sota_mean_reward_max: 0.6
   d3: mean_reward(hy) < mean_reward(sota)
   d4: reward_variance(sota) != 0
+  security_category_target: frontier_pass_at_5 < 0.4 and hy_pass_at_8 < 0.5
 tasks:
-  - id: dep-confusion-hijack
+  - id: mirror-tamper-forensics
+    difficulty: hard
+    primary_cwe: CWE-506
+    owasp: A08:2021
+    verifier_items: 15
+    mechanism: post-build tamper; multi-stage non-inline obfuscation; RECORD/SBOM forensics; restore
+  - id: dependency-confusion-pin
     difficulty: hard
     primary_cwe: CWE-494
     owasp: A08:2021
-    trigger: resolve
-  - id: nw-mirror-tamper-v1
-    difficulty: medium
-    primary_cwe: CWE-506
-    owasp: A06:2021
-    trigger: import
-  - id: nw-mirror-tamper-v2
+    verifier_items: 14
+    mechanism: resolution-time substitution; recompute-trusted-hash; lockfile re-pin + reinstall
+  - id: install-hook-exfil
     difficulty: hard
     primary_cwe: CWE-506
     owasp: A06:2021
-    trigger: import
-  - id: pickle-policy-rce
-    difficulty: hard
-    primary_cwe: CWE-502
-    owasp: A08:2021
-    trigger: deserialization
+    verifier_items: 15
+    mechanism: malicious .pth startup hook; static payload decode; hook removal verified at startup

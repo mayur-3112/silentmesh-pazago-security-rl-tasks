@@ -1,0 +1,62 @@
+instruction: |
+  A Python 3.11 service under /app/service depends on a small internal signing library
+  that a build resolved and installed into the active environment's site-packages at
+  /usr/local/lib/python3.11/site-packages. The build artifacts are under /app/build:
+  the resolver output is at /app/build/install.log and the pinned dependency set is at
+  /app/build/requirements.lock. The organization runs an internal package mirror whose
+  index is at /opt/mirror/index.json and which publishes the organization's own build
+  of that library; the distribution files the build downloaded are cached under
+  /opt/pip-cache.
+
+  The version that was installed is not the build the internal mirror publishes. It is
+  a working signing library, but importing it runs code that stages a hidden payload
+  and opens a single outbound connection to an external host; an egress review recorded
+  that attempt, and its note is at the end of /app/build/install.log. The pinned
+  dependency set carries no integrity constraint that would have stopped a substituted
+  distribution from being installed.
+
+  Write a findings report as a single JSON object at the absolute path /app/report.json
+  with exactly these keys:
+    confused_package   - the affected distribution name
+    malicious_version  - the version string that was actually installed
+    trusted_version    - the version the internal mirror publishes
+    malicious_artifact - absolute path of the cached distribution file that carries
+                         the injected code
+    trusted_artifact   - absolute path of the cached distribution file for the trusted
+                         build the mirror publishes
+    trusted_sha256     - the SHA-256 hex digest of that trusted distribution file
+    missing_control    - the integrity control absent from the dependency set, one of:
+                         hash-pinning, version-pinning, index-restriction
+    indicator_host     - the fully-qualified external host the staged payload contacts
+    indicator_port     - the TCP port the staged payload connects to
+    primary_cwe        - the CWE identifier (form "CWE-###") that most precisely
+                         classifies the injected-code weakness
+    owasp_a            - the OWASP Top 10 2021 category identifier (form "A##:2021")
+                         for the weakness
+
+  Then remediate. Edit /app/build/requirements.lock so that re-resolving the affected
+  dependency can only select the organization's trusted build and cannot be satisfied
+  by any other or substituted distribution, leaving every other line in the file
+  byte-for-byte unchanged. Replace the installed distribution with the trusted build
+  so that its files match that build exactly, importing the package performs no
+  outbound activity and runs no staged payload, and the package's documented signing
+  function still works.
+
+  The environment has no outbound network access, and the mirror index does not
+  publish the trusted build's hash. Recover every reported value, including that hash,
+  from the files on disk alone.
+
+author_name: SilentMesh
+author_email: mayur311agarwal@gmail.com
+category: security
+difficulty: hard
+tags:
+  - cwe-494
+  - owasp-a08
+  - supply-chain
+  - dependency-confusion
+  - integrity-hash
+  - deobfuscation
+max_agent_timeout_sec: 3600
+max_test_timeout_sec: 300
+run_tests_in_same_shell: false
