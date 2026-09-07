@@ -1,0 +1,56 @@
+instruction: |
+  A Python 3.11 service is installed at /app/service and depends on packages in the
+  active environment's site-packages, which is /usr/local/lib/python3.11/site-packages.
+  During an egress review the service's interpreter was observed making a single
+  outbound connection to a host that is not part of the recorded inventory and appears
+  nowhere in the first-party source under /app/service/src. The review notes are at
+  /app/service/logs/egress.log and a software bill of materials is at
+  /app/service/sbom.cdx.json.
+
+  A file was placed directly into site-packages that causes injected code to run
+  automatically, on its own, outside any legitimate distribution. That code belongs to
+  no legitimate distribution: it hands off to a staged payload that is held on disk only in
+  obfuscated form, split across bundled resource files, and it is that payload which
+  performs the observed connection. One installed distribution carries a dist-info
+  RECORD integrity manifest that lists the files of its untouched build; the injected
+  file, the module it runs, and the payload resources are not part of that manifest,
+  while the distribution's own legitimate files still match it.
+
+  Write a findings report as a single JSON object at the absolute path
+  /app/report.json with exactly these keys:
+    compromised_package - the name of the distribution the injected code runs from
+    pth_file            - absolute path of the file placed into site-packages that
+                          causes the injected code to run
+    loader_module       - absolute path of the module that file causes to run
+    trigger             - when the injected code first runs, one of:
+                          import, install, interpreter-startup, runtime-entrypoint
+    c2_host             - the fully-qualified host the payload contacts
+    c2_port             - the TCP port the payload connects to
+    exfil_endpoint      - the request path the payload targets on that host
+    decode_key          - the key that deobfuscates the staged payload, as hex
+    primary_cwe         - the CWE identifier (form "CWE-###") that most precisely
+                          classifies the injected-code weakness
+    owasp_a             - the OWASP Top 10 2021 category identifier (form "A##:2021")
+                          for the weakness
+
+  Then remediate the installed distribution so that launching a fresh interpreter
+  performs no outbound activity and runs no staged payload, the distribution once again
+  matches its recorded integrity manifest with no files present beyond those it lists,
+  and the package's documented functionality is unchanged. The environment has no
+  outbound network access; recover every reported value from the files on disk alone.
+
+author_name: SilentMesh
+author_email: mayur311agarwal@gmail.com
+category: security
+difficulty: hard
+tags:
+  - cwe-506
+  - owasp-a06
+  - supply-chain
+  - malware-analysis
+  - startup-hook
+  - integrity-manifest
+  - deobfuscation
+max_agent_timeout_sec: 3600
+max_test_timeout_sec: 300
+run_tests_in_same_shell: false
