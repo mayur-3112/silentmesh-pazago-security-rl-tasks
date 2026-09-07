@@ -1,6 +1,6 @@
 # SilentMesh — Security RL Task Environments
 
-[![task-suite](https://github.com/mayur-3112/pazago-security-rl-tasks/actions/workflows/ci.yml/badge.svg)](https://github.com/mayur-3112/pazago-security-rl-tasks/actions/workflows/ci.yml)
+[![task-suite](https://github.com/mayur-3112/silentmesh-pazago-security-rl-tasks/actions/workflows/ci.yml/badge.svg)](https://github.com/mayur-3112/silentmesh-pazago-security-rl-tasks/actions/workflows/ci.yml)
 
 Long-horizon, CWE/OWASP-mapped reinforcement-learning environments for training a
 security model, authored to the Terminal-Bench 4 procurement specification.
