@@ -1,0 +1,19 @@
+{
+  "task": "supply-chain-audit",
+  "task_logic_commit": "1ad9249",
+  "model": "claude-opus-5",
+  "harness": "Claude Code subscription CLI (vendor-side pilot)",
+  "isolation": "logical/path-isolated; not a hard OS filesystem sandbox",
+  "reward_mode": "binary full solve",
+  "episodes": [
+    {"id":"r0","diagnostic_score":1.000,"binary_reward":1,"turns":26,"duration_ms":451031,"session_id":"1608738d-ebfa-4e11-98f1-534a5d2eeb82"},
+    {"id":"r1","diagnostic_score":0.866,"binary_reward":0,"turns":27,"duration_ms":380065,"session_id":"b1f384d9-03c8-4c8f-9a14-b0f583055ed7"},
+    {"id":"r2","diagnostic_score":0.985,"binary_reward":0,"turns":23,"duration_ms":472210,"session_id":"9847c9da-b649-45ea-a699-ff83787dc879"},
+    {"id":"r3","diagnostic_score":0.910,"binary_reward":0,"turns":28,"duration_ms":514318,"session_id":"c9f42511-3b8c-4610-869c-1e0ec7f35c08"},
+    {"id":"r4","diagnostic_score":0.896,"binary_reward":0,"turns":28,"duration_ms":391412,"session_id":"c23ce04b-212c-4d15-bcf3-18d12f9f4d03"}
+  ],
+  "binary_pass_rate": 0.2,
+  "diagnostic_mean": 0.9314,
+  "diagnostic_population_variance": 0.0027,
+  "turn_count_gate_satisfied": false
+}

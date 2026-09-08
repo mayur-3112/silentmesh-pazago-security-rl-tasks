@@ -10,10 +10,11 @@ Scope: the **Security — Cyber exploits (supply-chain attacks)** category, mapp
 CWE / OWASP. This repository ships the **environment and the reward function** for each
 task; the live mean-reward rollouts run on the customer's official harness.
 
-> **On numbers:** per the brief, rollout means / pass-rates are produced on the official
-> harness and are **not fabricated here**. Cells marked _pending (official harness)_ are
-> filled after the D1–D4 measurement runs. Everything else is a fact about the shipped
-> artifacts, reproducible with the commands in `HOW-TO-TEST.md`.
+> **On numbers:** official acceptance numbers are produced on the customer's harness.
+> This repository now also ships the complete observable action logs and metadata for a
+> five-episode vendor-side Opus-5 pilot under `evidence/supply-chain-audit/`. The pilot is
+> explicitly labeled as logical/path isolation, not a hard OS sandbox. Cells marked
+> _pending (official harness)_ have not been measured under the customer's controls.
 
 ---
 
@@ -140,13 +141,22 @@ distributions are filled from the official harness (pending).
 
 ---
 
-## 5. Rollout results (pending official harness)
+## 5. Rollout results and shipped transcripts
+
+The final flagship pilot is auditable at `evidence/supply-chain-audit/`: five ordered
+action/tool transcripts, exact rewards, turns, durations, session identifiers, invocation,
+grading method, and sandbox limitations. Results: binary pass rate **0.20 (1/5)**;
+diagnostic scores `[1.000, 0.866, 0.985, 0.910, 0.896]`; diagnostic variance **0.0027**;
+turns `[26, 27, 23, 28, 28]`. This demonstrates the binary security pass-rate route in
+our pilot, but does not satisfy the >60-turn target and does not replace HY-4 or official
+harness measurements.
 
 | ID | Hy mean (≥8) | SOTA mean (≥5) | mean(Hy)<mean(SOTA) | SOTA var≠0 | Hy pass@8 | Frontier pass@5 |
 |---|---|---|---|---|---|---|
 | `mirror-tamper-forensics` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
 | `dependency-confusion-pin` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
 | `install-hook-exfil` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| `supply-chain-audit` | _pending_ | vendor pilot: binary 0.20 pass rate | _pending_ | diagnostic 0.0027 | _pending_ | vendor pilot: **0.20** |
 
 Acceptance uses the mean-reward gates (§2); pass@k are reference figures.
 

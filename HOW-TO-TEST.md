@@ -54,6 +54,11 @@ Opus 5 / GPT via its native harness) attempt the task ≥8 / ≥5 times and reco
 mean reward. This is the D1–D4 acceptance measurement; it needs model access we don't
 hold locally.
 
+The vendor-side Opus-5 pilot for `supply-chain-audit`, including complete observable
+action logs and an exact sandbox disclosure, is checked in at
+`evidence/supply-chain-audit/`. It is supporting evidence only; rerun on the official
+restricted harness for acceptance and turn-count measurement.
+
 ## What each level proves
 | Level | Proves | Needs |
 |---|---|---|
