@@ -56,28 +56,44 @@ def _walk(c):
         elif hasattr(k, "co_consts"):
             _walk(k)
 _walk(code)
-# the host is XOR-encrypted; the payload derives its key at runtime from the env var
-# $GC_BUILD_SIG (unset in the sandbox, so it never contacts the real host). The key
-# combines the RECORD manifest's recorded (clean) hash with the outer .buildcache
-# decode key, not recorded_hash alone.
-build_sig = hashlib.sha256((recorded_hash + key_hex).encode()).hexdigest()
-key16 = bytes.fromhex(build_sig)[:16]
-host = None
+# multi-stage recovery: stage-1 campaign id (plaintext const) -> sha256(campaign)[:16]
+# decrypts the host -> sha256(host)[:16] decrypts "port|endpoint". Keys chain from decoded
+# data, never from an on-disk hash.
+campaign = host = endpoint = None
+port = None
+host_enc = None
+for c in strs:
+    k1 = hashlib.sha256(c.encode()).digest()[:16]
+    for bc in byts:
+        try:
+            h = bytes(x ^ k1[i % 16] for i, x in enumerate(bc)).decode()
+        except Exception:
+            continue
+        if re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", h):
+            campaign, host, host_enc = c, h, bc
+            break
+    if host:
+        break
+assert host, "host not recovered from payload"
+k2 = hashlib.sha256(host.encode()).digest()[:16]
 for bc in byts:
+    if bc is host_enc:
+        continue
     try:
-        cand = bytes(x ^ key16[i % 16] for i, x in enumerate(bc)).decode()
+        m = bytes(x ^ k2[i % 16] for i, x in enumerate(bc)).decode()
     except Exception:
         continue
-    if re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", cand):
-        host = cand
-assert host, "host not recovered from payload"
-endpoint = next(s for s in strs if s.startswith("/"))
-port = next(i for i in ints if 1024 < i < 65536)
+    if re.match(r"^\d+\|/", m):
+        _p, endpoint = m.split("|", 1)
+        port = int(_p)
+        break
+assert port and endpoint, "port/endpoint not recovered"
 
 report = {
     "compromised_package": "geocache",
     "malicious_path": malicious,
     "trigger": "import",
+    "campaign_id": campaign,
     "c2_host": host,
     "c2_port": port,
     "exfil_endpoint": endpoint,

@@ -41,6 +41,7 @@ def _sync_check(gt):
     """Fail loudly if the verifier's embedded constants drift from the generator."""
     pairs = [
         ("EXP_HOST", gt["c2_host"]), ("EXP_PORT", gt["c2_port"]),
+        ("EXP_CAMPAIGN", gt["campaign_id"]),
         ("EXP_ENDPOINT", gt["exfil_endpoint"]), ("EXP_KEY", gt["decode_key"]),
         ("EXP_TAMPERED_HASH", gt["actual_hash"]), ("EXP_PKG", gt["compromised_package"]),
         ("EXP_TRIGGER", gt["trigger"]), ("EXP_CWE", gt["primary_cwe"]),
@@ -89,21 +90,37 @@ def oracle(sp, mirror, report_path):
             elif hasattr(k, "co_consts"):
                 walk(k)
     walk(code)
-    build_sig = hashlib.sha256((recorded_hash + key_hex).encode()).hexdigest()
-    key16 = bytes.fromhex(build_sig)[:16]
-    host = None
+    import hashlib as _h
+    campaign = host = endpoint = host_enc = None
+    port = None
+    for c in strs:
+        k1 = _h.sha256(c.encode()).digest()[:16]
+        for bc in byts:
+            try:
+                hh = bytes(x ^ k1[i % 16] for i, x in enumerate(bc)).decode()
+            except Exception:
+                continue
+            if re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", hh):
+                campaign, host, host_enc = c, hh, bc
+                break
+        if host:
+            break
+    k2 = _h.sha256(host.encode()).digest()[:16]
     for bc in byts:
+        if bc is host_enc:
+            continue
         try:
-            cand = bytes(x ^ key16[i % 16] for i, x in enumerate(bc)).decode()
+            m = bytes(x ^ k2[i % 16] for i, x in enumerate(bc)).decode()
         except Exception:
             continue
-        if re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", cand):
-            host = cand
+        if re.match(r"^\d+\|/", m):
+            _p, endpoint = m.split("|", 1)
+            port = int(_p)
+            break
     report = {
         "compromised_package": "geocache", "malicious_path": malicious, "trigger": "import",
-        "c2_host": host,
-        "c2_port": next(i for i in ints if 1024 < i < 65536),
-        "exfil_endpoint": next(s for s in strs if s.startswith("/")),
+        "campaign_id": campaign,
+        "c2_host": host, "c2_port": port, "exfil_endpoint": endpoint,
         "decode_key": key_hex, "primary_cwe": "CWE-506", "owasp_a": "A08:2021",
         "recorded_hash": recorded_hash, "actual_hash": actual_hash,
     }
