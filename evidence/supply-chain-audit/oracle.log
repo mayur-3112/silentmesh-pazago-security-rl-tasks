@@ -1,0 +1,12 @@
+Command: python3 tasks/supply-chain-audit/local_test.py
+Environment: freshly generated, 55 installed distributions, 9 compromises, 6 red herrings
+Result: REWARD = 67/67 = 1.000
+
+Passed groups:
+- detection, vector, classification, and indicator checks for all 9 compromises
+- no-false-positive checks for all 6 benign red herrings
+- remediation checks for all 9 compromises
+- four service execution checks
+- benign-package preservation check
+
+The complete verifier output is deterministic and can be reproduced with the command above.
