@@ -50,6 +50,8 @@ author_name: SilentMesh
 author_email: mayur311agarwal@gmail.com
 category: security
 difficulty: hard
+primary_cwe: CWE-494
+owasp_a: A08:2021
 tags:
   - cwe-494
   - owasp-a08

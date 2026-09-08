@@ -69,6 +69,26 @@ def static_checks(task):
         keys = report_keys_from_instruction(instr)
         missing = [k for k in keys if k not in verifier]
         chk("report keys covered by verifier (%d keys)" % len(keys), not missing)
+
+    # Schema requirements from the requirements-PDF compliance audit (Phase 1):
+    # every task must declare its CWE/OWASP classification, and the public
+    # dossier must not carry solution-specific values (those belong only in
+    # internal/ANSWER_KEY.md, never shipped to an agent or grader).
+    manifest = read(os.path.join(task, "task.yaml"))
+    chk("primary_cwe present in task.yaml",
+        bool(re.search(r"^primary_cwe:\s*CWE-\d+\s*$", manifest, re.M)))
+    chk("owasp_a present in task.yaml",
+        bool(re.search(r"^owasp_a:\s*A\d\d:20\d\d\s*$", manifest, re.M)))
+    chk("internal/ answer-key directory exists",
+        os.path.isdir(os.path.join(task, "internal")))
+    doc_path = os.path.join(task, "DOCUMENTATION.md")
+    if os.path.exists(doc_path):
+        doc = read(doc_path)
+        SECRET_MARKERS = ("decode_key=", "c2_host=", "trusted_sha256=",
+                           "recorded_hash=", "Ground truth (graders only")
+        leaked = [m for m in SECRET_MARKERS if m in doc]
+        chk("DOCUMENTATION.md carries no plaintext answer-key values",
+            not leaked)
     return out
 
 

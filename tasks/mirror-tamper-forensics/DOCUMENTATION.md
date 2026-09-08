@@ -120,10 +120,9 @@ multi-package tree with decoys and an SBOM.
   file (an intended forensic artifact). Constants embedded in the verifier are
   cross-checked against a fresh build by `local_test.py`, so they cannot drift.
 
-## Ground truth (graders only — do NOT ship to the model)
-compromised_package=geocache · malicious_path=<site-packages>/geocache/_cache.py
-trigger=import · c2_host=telemetry.pkg-sync-cdn.net · c2_port=8443 · exfil_endpoint=/v2/collect
-decode_key=9f1c33a75be24d0186ca4471e2d5b8f0
-primary_cwe=CWE-506 · owasp_a=A08:2021
-recorded_hash=sha256(clean _cache.py) · actual_hash=sha256(tampered _cache.py)
-fix=restore geocache/{__init__,_grid,_cache}.py from /opt/mirror/geocache-2.3.1 and remove geocache/_resources
+## Ground truth
+Moved to `internal/ANSWER_KEY.md` — graders/QA only, never included in any
+agent-facing or public deliverable. This file (`DOCUMENTATION.md`) is the
+public-facing dossier and contains no solution-specific values. That file
+also records a known, unfixed weakness in this task's obfuscation design —
+see there before relying on this task's current D2/D4 status.

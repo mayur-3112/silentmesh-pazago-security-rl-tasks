@@ -136,12 +136,7 @@ resources → re-verify-startup loop across a multi-package tree with decoys and
   artifact). Constants embedded in the verifier are cross-checked against a fresh build by
   `local_test.py` (`_sync_check`), so they cannot drift.
 
-## Ground truth (graders only — do NOT ship to the model)
-compromised_package=metricslib · pth_file=<site-packages>/metricslib-autoload.pth
-loader_module=<site-packages>/metricslib/_autoload.py · trigger=interpreter-startup
-c2_host=sync.metrics-collector-cdn.net · c2_port=9443 · exfil_endpoint=/ingest/v1
-decode_key=a3f10c5e7b9284d16f0e3a5c9d7182b4
-primary_cwe=CWE-506 · owasp_a=A06:2021
-fix=remove metricslib-autoload.pth, remove metricslib/_autoload.py, and remove
-metricslib/_resources; the legitimate metricslib/{__init__,_stats}.py stay and still
-match the dist-info RECORD.
+## Ground truth
+Moved to `internal/ANSWER_KEY.md` — graders/QA only, never included in any
+agent-facing or public deliverable. This file (`DOCUMENTATION.md`) is the
+public-facing dossier and contains no solution-specific values.

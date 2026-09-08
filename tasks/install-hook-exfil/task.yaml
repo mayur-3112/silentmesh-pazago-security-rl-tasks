@@ -43,6 +43,8 @@ author_name: SilentMesh
 author_email: mayur311agarwal@gmail.com
 category: security
 difficulty: hard
+primary_cwe: CWE-506
+owasp_a: A06:2021
 tags:
   - cwe-506
   - owasp-a06
