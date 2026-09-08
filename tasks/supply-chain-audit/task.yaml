@@ -1,0 +1,54 @@
+instruction: |
+  A Python 3.11 service under /app/service depends on roughly thirty distributions
+  installed into /opt/service/venv/lib/python3.11/site-packages. During an egress review several
+  outbound connection attempts were seen going to hosts that are not the organisation's
+  internal mirror and appear nowhere in the first-party source under /app/service/src; the
+  review notes are at /app/service/logs/egress.log. The intended, resolved dependency set
+  is pinned in /app/service/requirements.lock, the internal mirror at /opt/mirror holds the
+  trusted builds of the organisation's own packages, a CycloneDX SBOM is at
+  /app/service/sbom.cdx.json, local modifications the platform team has approved are
+  recorded in /app/service/PATCHES.md, and each installed distribution carries a dist-info
+  RECORD integrity manifest.
+
+  More than one distribution has been compromised through the supply chain, and they were
+  not all compromised the same way. Some other distributions in the environment look
+  irregular but are benign, and those must not be reported as compromised.
+
+  Write a findings report as a single JSON object at the absolute path /app/report.json
+  with exactly one key, "compromised", whose value is a JSON array holding one object per
+  genuinely compromised distribution and nothing else. Each object must have these keys:
+    package   - the distribution name
+    vector    - the compromise mechanism, one of: tampered-file, malicious-wheel,
+                dependency-confusion, typosquat, install-hook
+    trigger   - when the injected code first runs, one of: import, install,
+                runtime-entrypoint, interpreter-startup
+    cwe       - the CWE identifier (form "CWE-###") that most precisely classifies the
+                weakness
+    owasp     - the OWASP Top 10 2021 category identifier (form "A##:2021")
+    indicator - the primary indicator of compromise recovered from disk: the
+                fully-qualified host the code contacts where it beacons, otherwise the
+                single most specific artefact identifying the compromise (a malicious
+                version string, an impersonated package name, or the module executed at
+                startup)
+
+  Then remediate the environment so that every compromised distribution is neutralised —
+  restored to its trusted build, repinned to the trusted source, or removed — while the
+  benign distributions are left in place and the service under /app/service still imports
+  and runs unchanged. The environment has no outbound network access; recover every
+  reported value from the files on disk alone.
+
+author_name: SilentMesh
+author_email: mayur311agarwal@gmail.com
+category: security
+difficulty: hard
+tags:
+  - supply-chain
+  - malware-triage
+  - dependency-confusion
+  - typosquat
+  - integrity-manifest
+  - cwe-506
+  - owasp-a08
+max_agent_timeout_sec: 7200
+max_test_timeout_sec: 300
+run_tests_in_same_shell: false

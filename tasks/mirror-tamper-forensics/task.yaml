@@ -20,6 +20,7 @@ instruction: |
     malicious_path      - absolute path of the single altered file
     trigger             - when the injected code first runs, one of:
                           import, install, runtime-entrypoint
+    campaign_id         - the campaign identifier the staged payload carries
     c2_host             - the fully-qualified host the payload contacts
     c2_port             - the TCP port the payload connects to
     exfil_endpoint      - the request path the payload targets on that host

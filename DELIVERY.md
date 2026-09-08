@@ -17,7 +17,37 @@ task; the live mean-reward rollouts run on the customer's official harness.
 
 ---
 
-## 1. Task inventory & category distribution
+## 0. Flagship deliverable — `supply-chain-audit` (calibrated with real Opus-5 rollouts)
+
+This is the primary task for difficulty acceptance. Unlike the earlier single-mechanism
+drafts in §1 — which real Opus-5 rollouts showed **saturate** (a SOTA model fully solves any
+single statically-solvable gate, giving mean ~0.9–1.0 and ~zero variance) — this task is a
+long-horizon, multi-vector supply-chain incident: **55 installed distributions, 9
+compromises across 5 distinct mechanisms, 6 benign red-herrings, FP-penalized precision, and
+an exacting coupled remediation** that must keep the service running.
+
+Accepted on the PDF's **binary route** (binary reward = 1.0 iff full solve; security
+category target: frontier pass@5 < 0.4). **Measured on 5 blind Opus-5 rollouts** (isolated
+envs, graded externally):
+
+| Criterion | Target | Measured | Status |
+|---|---|---|---|
+| Frontier full-solve rate | < 0.40 | **0.20** (1/5) | ✅ |
+| Reward variance (D4) | ≠ 0 | **0.0027** | ✅ |
+| Oracle-solvable | 1.0 | **1.000** (Docker, offline) | ✅ |
+| Non-gameable | do-nothing ≈ 0 | **0.00** / flag-all 0.31 | ✅ |
+| Fair grading | no arbitrary single-answer | host-indicator + defensible-CWE sets | ✅ |
+| Turn count | > 60 (Opus5-xhigh) | ~26 on directed `claude -p` harness | ⚠️ verify on org harness |
+
+The rollout failures are genuine: Opus-5 reliably finds all 9 compromises and avoids all 6
+red-herrings, but slips on the exacting **coupled remediation** (removing a typosquat while
+keeping its dependent service import working; fully cleaning the malicious entry point).
+Full mechanism, reward model, rollout evidence, and the honest turn-count caveat are in
+`tasks/supply-chain-audit/DOCUMENTATION.md`.
+
+---
+
+## 1. Earlier single-mechanism drafts (superseded for difficulty; retained for reference)
 
 | ID | Difficulty | Primary CWE | OWASP 2021 | Attack mechanism | Items |
 |---|---|---|---|---|---|

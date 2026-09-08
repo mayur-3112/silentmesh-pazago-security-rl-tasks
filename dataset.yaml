@@ -15,6 +15,35 @@ grading:
   d3: mean_reward(hy) < mean_reward(sota)
   d4: reward_variance(sota) != 0
   security_category_target: frontier_pass_at_5 < 0.4 and hy_pass_at_8 < 0.5
+
+# ── Calibrated flagship task ──────────────────────────────────────────────────
+# supply-chain-audit is the calibrated deliverable, accepted on the PDF's BINARY route
+# (binary reward = 1.0 iff full solve; security category target frontier pass@5 < 0.4).
+# Measured on 5 blind Opus-5 rollouts: full-solve 1/5 = 20% (< 40%, MET), reward variance
+# 0.0027 (D4 MET), oracle-solvable (1.000), do-nothing 0.00 / flag-all 0.31 (non-gameable).
+# See tasks/supply-chain-audit/DOCUMENTATION.md for the full rollout evidence + the honest
+# turn-count caveat (~26 turns on a directed claude -p harness; to be verified on the org's
+# Opus5-xhigh Terminal-Bench measurement).
+flagship:
+  - id: supply-chain-audit
+    difficulty: hard
+    primary_cwe: CWE-506  # plus CWE-494 (dependency confusion) across the 9 compromises
+    owasp: A08:2021
+    reward: binary  # 1.0 iff full solve; fractional pass-fraction logged for analysis
+    verifier_items: 56  # expanded to 67 weighted pytest instances
+    installed_distributions: 55
+    compromises: 9   # 5 distinct mechanisms: tamper, malicious-wheel, dep-confusion, typosquat, install-hook
+    red_herrings: 6
+    sota_full_solve_rate: 0.20      # Opus-5, 5 rollouts
+    sota_reward_variance: 0.0027
+    mechanism: long-horizon multi-vector supply-chain triage + FP-penalized precision + exacting coupled remediation
+
+# ── Earlier single-mechanism drafts ───────────────────────────────────────────
+# NOTE: the three tasks below are earlier single-mechanism drafts. Real Opus-5 rollouts
+# showed they SATURATE (mean ~0.9-1.0, near-zero variance) — a single statically-solvable
+# gate is fully solved by SOTA. They are retained for reference/breadth but are superseded
+# by supply-chain-audit for difficulty acceptance, and would need the same multi-vector
+# long-horizon rework to pass the gates.
 tasks:
   - id: mirror-tamper-forensics
     difficulty: hard
