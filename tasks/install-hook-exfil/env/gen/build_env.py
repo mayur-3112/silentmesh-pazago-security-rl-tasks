@@ -102,11 +102,13 @@ KEY_ENV = "ML_BUILD_SIG"                           # runtime host-decrypt key so
 # the decryption key is read at RUNTIME from an environment variable ($ML_BUILD_SIG) that
 # is unset in the sandbox, so a fresh interpreter startup -- even a "launch and capture the
 # socket call" attempt with the env generically neutralised -- decrypts to garbage and
-# never contacts the real host. The true key is the package's build signature: sha256 of
-# the clean metricslib/_stats.py (whose hash is recorded in the RECORD manifest, so the
-# analyst can recompute it). Recovering the host requires decoding the payload,
-# understanding the env-keying, recomputing that hash, and decrypting statically.
-_BUILD_SIG = hashlib.sha256(_CLEAN_STATS.encode()).hexdigest()
+# never contacts the real host. The true key combines TWO independently-recovered
+# ingredients -- the package's build signature (sha256 of the clean metricslib/_stats.py,
+# whose hash is recorded in the RECORD manifest) AND the outer stage-2 decode key (the hex
+# string in .keycache, itself only usable once the four-stage transform is understood) --
+# so reading the manifest alone is not sufficient: recovering the host requires genuine
+# static analysis of both the payload's obfuscation and its keying.
+_BUILD_SIG = hashlib.sha256((hashlib.sha256(_CLEAN_STATS.encode()).hexdigest() + XOR_KEY_HEX).encode()).hexdigest()
 _KEY16 = bytes.fromhex(_BUILD_SIG)[:16]
 _ENC_HOST = bytes(b ^ _KEY16[i % 16] for i, b in enumerate(C2_HOST.encode()))
 

@@ -89,7 +89,8 @@ def oracle(sp, mirror, report_path):
             elif hasattr(k, "co_consts"):
                 walk(k)
     walk(code)
-    key16 = bytes.fromhex(recorded_hash)[:16]
+    build_sig = hashlib.sha256((recorded_hash + key_hex).encode()).hexdigest()
+    key16 = bytes.fromhex(build_sig)[:16]
     host = None
     for bc in byts:
         try:

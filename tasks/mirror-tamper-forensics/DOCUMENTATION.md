@@ -121,8 +121,9 @@ multi-package tree with decoys and an SBOM.
   cross-checked against a fresh build by `local_test.py`, so they cannot drift.
 
 ## Ground truth
-Moved to `internal/ANSWER_KEY.md` — graders/QA only, never included in any
-agent-facing or public deliverable. This file (`DOCUMENTATION.md`) is the
-public-facing dossier and contains no solution-specific values. That file
-also records a known, unfixed weakness in this task's obfuscation design —
-see there before relying on this task's current D2/D4 status.
+Moved to `internal/ANSWER_KEY.md` — graders/QA only, never included in any agent-facing or public deliverable. This file (`DOCUMENTATION.md`) is the public-facing dossier and contains no solution-specific values.
+
+
+## Docker validation
+Verified in the real pinned container (not just the Python simulation):
+`docker build` → `solution.sh` (oracle) → `run-tests.sh` (verifier) → **REWARD = 1.000**.

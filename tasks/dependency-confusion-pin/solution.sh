@@ -53,15 +53,18 @@ def _walk(c):
             _walk(k)
 _walk(code)
 # the host is XOR-encrypted; the payload reads its decrypt key at runtime from an env var
-# (unset here, so a naive detonation decrypts to garbage). The real key is the trusted
-# build's signing-module hash -- recompute it from the clean _signing.py inside the
-# trusted wheel, then decrypt statically.
+# (unset here, so a naive detonation decrypts to garbage). The real key combines the
+# trusted build's signing-module hash (recompute it from the clean _signing.py inside the
+# trusted wheel) with the outer stage-2 decode key (cachekey.bin), not the signing hash
+# alone.
 _signing_bytes = None
 with zipfile.ZipFile(trusted_wheel) as _zf:
     for _n in _zf.namelist():
         if _n.endswith("_signing.py"):
             _signing_bytes = _zf.read(_n)
-key16 = bytes.fromhex(hashlib.sha256(_signing_bytes).hexdigest())[:16]
+_key_hex = key.hex()
+build_sig = hashlib.sha256((hashlib.sha256(_signing_bytes).hexdigest() + _key_hex).encode()).hexdigest()
+key16 = bytes.fromhex(build_sig)[:16]
 host = None
 for bc in byts:
     try:

@@ -92,14 +92,15 @@ def oracle(sp, cache, mirror, build_dir, report_path):
                 walk(k)
     walk(code)
     # host is XOR-encrypted; the runtime decrypt key is read from an env var (unset in the
-    # sandbox). The real key is the trusted build's signing-module hash -- recompute it from
-    # the clean _signing.py inside the trusted wheel and decrypt statically.
+    # sandbox). The real key combines the trusted build's signing-module hash (recompute it
+    # from the clean _signing.py inside the trusted wheel) with the outer stage-2 decode key.
     _sig = None
     with zipfile.ZipFile(trust_wheel) as _zf:
         for _n in _zf.namelist():
             if _n.endswith("_signing.py"):
                 _sig = _zf.read(_n)
-    key16 = bytes.fromhex(hashlib.sha256(_sig).hexdigest())[:16]
+    build_sig = hashlib.sha256((hashlib.sha256(_sig).hexdigest() + key.hex()).encode()).hexdigest()
+    key16 = bytes.fromhex(build_sig)[:16]
     host = None
     for bc in byts:
         try:

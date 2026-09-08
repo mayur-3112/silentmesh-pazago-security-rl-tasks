@@ -66,14 +66,14 @@ def _walk(c):
         elif hasattr(k, "co_consts"):
             _walk(k)
 _walk(code)
-# the host is XOR-encrypted; the payload reads its decrypt key from an env var (unset here):
-# decrypt it statically -- the key is the build signature (sha256 of the clean
-# metricslib/_stats.py); xor each bytes const by that 16-byte key and match a hostname regex.
 # host is XOR-encrypted; the payload reads its decrypt key at runtime from an env var
-# (unset here, so a naive startup decrypts to garbage). The real key is the build
-# signature: sha256 of the clean metricslib/_stats.py (its hash is in the RECORD manifest).
-key16 = bytes.fromhex(hashlib.sha256(
-    open(os.path.join(SP, "metricslib", "_stats.py"), "rb").read()).hexdigest())[:16]
+# (unset here, so a naive startup decrypts to garbage). The real key combines the build
+# signature (sha256 of the clean metricslib/_stats.py, whose hash is in the RECORD
+# manifest) with the outer stage-2 decode key (.keycache), not the build signature alone.
+_stats_hash = hashlib.sha256(
+    open(os.path.join(SP, "metricslib", "_stats.py"), "rb").read()).hexdigest()
+build_sig = hashlib.sha256((_stats_hash + key_hex).encode()).hexdigest()
+key16 = bytes.fromhex(build_sig)[:16]
 host = None
 for bc in byts:
     try:

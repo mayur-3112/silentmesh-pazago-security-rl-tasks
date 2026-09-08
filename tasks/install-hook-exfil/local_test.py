@@ -107,9 +107,12 @@ def oracle(sp, report_path):
                 walk(k)
     walk(code)
     # host is XOR-encrypted; the runtime decrypt key is read from an env var (unset in the
-    # sandbox). The real key is the build signature: sha256 of the clean metricslib/_stats.py.
-    key16 = bytes.fromhex(hashlib.sha256(
-        open(os.path.join(sp, "metricslib", "_stats.py"), "rb").read()).hexdigest())[:16]
+    # sandbox). The real key combines the build signature (sha256 of the clean
+    # metricslib/_stats.py) with the outer stage-2 decode key, not the signature alone.
+    _stats_hash = hashlib.sha256(
+        open(os.path.join(sp, "metricslib", "_stats.py"), "rb").read()).hexdigest()
+    build_sig = hashlib.sha256((_stats_hash + key_hex).encode()).hexdigest()
+    key16 = bytes.fromhex(build_sig)[:16]
     host = None
     for bc in byts:
         try:

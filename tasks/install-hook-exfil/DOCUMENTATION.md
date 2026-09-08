@@ -137,6 +137,9 @@ resources → re-verify-startup loop across a multi-package tree with decoys and
   `local_test.py` (`_sync_check`), so they cannot drift.
 
 ## Ground truth
-Moved to `internal/ANSWER_KEY.md` — graders/QA only, never included in any
-agent-facing or public deliverable. This file (`DOCUMENTATION.md`) is the
-public-facing dossier and contains no solution-specific values.
+Moved to `internal/ANSWER_KEY.md` — graders/QA only, never included in any agent-facing or public deliverable. This file (`DOCUMENTATION.md`) is the public-facing dossier and contains no solution-specific values.
+
+
+## Docker validation
+Verified in the real pinned container (not just the Python simulation):
+`docker build` → `solution.sh` (oracle) → `run-tests.sh` (verifier) → **REWARD = 1.000**.

