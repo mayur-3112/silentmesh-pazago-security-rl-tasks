@@ -1,5 +1,5 @@
 instruction: |
-  A Python 3.11 service under /app/service depends on roughly thirty distributions
+  A Python 3.11 service under /app/service depends on roughly fifty-five distributions
   installed into /opt/service/venv/lib/python3.11/site-packages. During an egress review several
   outbound connection attempts were seen going to hosts that are not the organisation's
   internal mirror and appear nowhere in the first-party source under /app/service/src; the

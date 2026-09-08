@@ -69,7 +69,7 @@ triage + remediation), else `0.0` (`run-tests.sh`). This is the PDF's binary-acc
 route (security category: frontier pass@5 < 0.4). The fractional pass-fraction is still
 logged for failure-mode analysis.
 
-Measured reward profile (oracle / floors): do-nothing **0.00**, flag-everything **0.31**,
+Measured reward profile (oracle / floors): do-nothing **0.00**, flag-everything **0.343**,
 oracle **1.00**.
 
 ## Anti-reward-hacking
@@ -87,10 +87,10 @@ oracle **1.00**.
 
 - **Oracle** (`solution.sh` / `local_test.py`): full solve → **1.000** (verified in Docker,
   offline, and via the local runner).
-- **SOTA (Opus 5), 5 blind rollouts** in isolated envs, graded externally:
+- **SOTA (Opus 5), 5 blind rollouts** in separate path-isolated episode roots, graded externally:
   full-solve rate **1/5 = 20%** (target for the security category: frontier pass@5 < 0.4 →
   **met**); per-rollout fractional rewards `[1.00, 0.87, 0.99, 0.91, 0.90]`, variance
-  `0.0027` (**D4: ≠ 0, met**). The failures are genuine — Opus-5 reliably finds all nine
+  `0.0027` (**vendor pilot D4: ≠ 0; official D4 remains pending**). The failures are genuine — Opus-5 reliably finds all nine
   compromises and avoids all six red herrings, but slips on the *exacting coupled
   remediation* (removing a typosquat while keeping its dependent import working; fully
   cleaning the entry point), which is where the difficulty lives.
@@ -114,7 +114,7 @@ the reliable way to drive assistant-turn count up.
 ```
 python tasks/supply-chain-audit/local_test.py            # oracle  -> REWARD 67/67 = 1.000
 python tasks/supply-chain-audit/local_test.py --lazy     # do-nothing -> 0.000
-python tasks/supply-chain-audit/local_test.py --flagall  # flag-everything -> 0.315
+python tasks/supply-chain-audit/local_test.py --flagall  # flag-everything -> 0.343
 
 # Docker (offline, gold standard):
 docker build -t sca tasks/supply-chain-audit

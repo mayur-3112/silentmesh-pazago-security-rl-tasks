@@ -28,15 +28,15 @@ compromises across 5 distinct mechanisms, 6 benign red-herrings, FP-penalized pr
 an exacting coupled remediation** that must keep the service running.
 
 Accepted on the PDF's **binary route** (binary reward = 1.0 iff full solve; security
-category target: frontier pass@5 < 0.4). **Measured on 5 blind Opus-5 rollouts** (isolated
-envs, graded externally):
+category target: frontier pass@5 < 0.4). **Measured on 5 blind Opus-5 rollouts** (separate
+path-isolated episode roots, graded externally; not a hard OS sandbox):
 
 | Criterion | Target | Measured | Status |
 |---|---|---|---|
-| Frontier full-solve rate | < 0.40 | **0.20** (1/5) | ✅ |
-| Reward variance (D4) | ≠ 0 | **0.0027** | ✅ |
+| Frontier full-solve rate | < 0.40 | vendor pilot: **0.20** (1/5) | ✅ pilot; official pending |
+| Reward variance (D4) | ≠ 0 | vendor pilot: **0.0027** | ✅ pilot; official pending |
 | Oracle-solvable | 1.0 | **1.000** (Docker, offline) | ✅ |
-| Non-gameable | do-nothing ≈ 0 | **0.00** / flag-all 0.31 | ✅ |
+| Non-gameable | do-nothing ≈ 0 | **0.00** / flag-all 0.343 | ✅ |
 | Fair grading | no arbitrary single-answer | host-indicator + defensible-CWE sets | ✅ |
 | Turn count | > 60 (Opus5-xhigh) | ~26 on directed `claude -p` harness | ⚠️ verify on org harness |
 
@@ -129,7 +129,8 @@ Source of truth: `dataset.yaml` → `harness_map`. Verified runnable under **Har
 
 ## 4. Turn-count distribution & timeout policy
 
-Turn count = number of `role=assistant` messages. Bar: Hy4-Preview (think) turns **> 80**
+The vendor pilot reports Claude Code's `num_turns` field. The customer's harness owns the
+official turn definition. Bar: Hy4-Preview (think) turns **> 80**
 (TB4 ≈ 100) **or** Opus5-xhigh turns **> 60** (TB4 ≈ 75). Each task's horizon is driven by
 a broad forensic loop over a multi-package tree with decoys, manifests, and an
 SBOM/lockfile, plus a multi-stage decode and a behaviourally-verified remediation.
@@ -190,8 +191,8 @@ Internal re-inspection dimensions and current status:
 
 | Dimension | Status |
 |---|---|
-| Instruction quality | Pass — outcome-only, ≤ 1500 words (346/406/382), no headings, no steering, absolute paths; graded values (trigger, CWE, OWASP, control) are not stated in the instruction. |
+| Instruction quality | Pass — outcome-only, ≤ 1500 words (355/398/372/336), no headings, no steering, absolute paths; graded values (trigger, CWE, OWASP, control) are not stated in the instruction. |
 | Instruction–test consistency | Pass — every report key + each remediation clause maps 1:1 to a verifier item; oracle reaches full reward in the container and under Harbor. |
 | Test quality | Pass — fractional partial-credit reward; earned work dominates; guessing / do-nothing / symptom-suppression / grep / wildcard / manifest-edit reward-hacks provably blocked and, where measurable, measured. |
-| Environment reproducibility | Pass — pinned base + apt + pytest; one deterministic generator (the same one `local_test.py` imports), COPYed then removed from the final image; no answer written to disk. |
+| Environment reproducibility | Pass — pinned base + apt + pytest; one deterministic generator (the same one `local_test.py` imports), COPYed then removed from the final agent image; no answer key is present in that image. |
 | Answer dependency | Pass — C2 indicators and tampered-file digests are greppable nowhere on the agent filesystem; verifier constants are cross-checked against a fresh build so they cannot drift. |

@@ -1,12 +1,10 @@
-Command: python3 tasks/supply-chain-audit/local_test.py
-Environment: freshly generated, 55 installed distributions, 9 compromises, 6 red herrings
-Result: REWARD = 67/67 = 1.000
+Harbor 0.20 oracle run (offline task container)
 
-Passed groups:
-- detection, vector, classification, and indicator checks for all 9 compromises
-- no-false-positive checks for all 6 benign red herrings
-- remediation checks for all 9 compromises
-- four service execution checks
-- benign-package preservation check
+Agent output:
+oracle done: {'geoindex': 'sync-metrics.geoindex-cdn.net', 'metricslib': 'collector.metricslib-telemetry.io', 'corp-telemetry': '9.9.9', 'sluglfy': 'slugify', 'buildtools-ext': 'buildtools_ext._bootstrap', 'logkit': 'logkit-metrics.telemetry-cdn.net', 'svc-cli': 'svc-cli-collect.pkg-telemetry.net', 'urllib33': 'urllib3', 'metrics-core': '9.9.9'}
 
-The complete verifier output is deterministic and can be reproduced with the command above.
+Verifier output:
+...................................................................      [100%]
+67 passed in 0.16s
+PASS_FRACTION = 67/67 = 1.000000   (reference only)
+REWARD = 1.0   (binary: 1.0 iff full solve)

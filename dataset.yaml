@@ -20,7 +20,8 @@ grading:
 # supply-chain-audit is the calibrated deliverable, accepted on the PDF's BINARY route
 # (binary reward = 1.0 iff full solve; security category target frontier pass@5 < 0.4).
 # Measured on 5 blind Opus-5 rollouts: full-solve 1/5 = 20% (< 40%, MET), reward variance
-# 0.0027 (D4 MET), oracle-solvable (1.000), do-nothing 0.00 / flag-all 0.31 (non-gameable).
+# 0.0027 (vendor-pilot D4 met; official D4 pending), oracle-solvable (1.000),
+# do-nothing 0.00 / flag-all 0.343 (non-gameable).
 # See tasks/supply-chain-audit/DOCUMENTATION.md for the full rollout evidence + the honest
 # turn-count caveat (~26 turns on a directed claude -p harness; to be verified on the org's
 # Opus5-xhigh Terminal-Bench measurement).

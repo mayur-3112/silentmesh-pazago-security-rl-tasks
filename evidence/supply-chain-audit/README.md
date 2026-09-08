@@ -46,6 +46,15 @@ official only after rerunning in the customer's restricted Harbor/Terminal-Bench
 harness (restricted mounts, non-root user, and the task container's offline
 network policy).
 
+| Boundary | Vendor pilot configuration |
+|---|---|
+| Process user | The invoking host user; not a dedicated unprivileged container user |
+| Filesystem | Separate episode root and prompt restriction, but host filesystem technically reachable |
+| Network | Host network technically available; no network isolation was enforced by the launcher |
+| Docker | Not used for model episodes; host Docker access was not explicitly denied |
+| Hidden task files | Generator, verifier, solution, documentation, and answer key were absent from the episode root |
+| Grading | External and post-episode; the model was not given verifier feedback |
+
 The audit trail also records the concrete boundary exceptions: r3 queried the host
 Python executable path and created/used a helper at `/tmp/mkrecord.py`. No episode
 read the repository's generator, verifier, documentation, `solution.sh`, another
@@ -55,7 +64,8 @@ behavior evidence rather than an official sandboxed score.
 ## Invocation and grading
 
 Episodes used Claude Code subscription authentication, model
-`claude-opus-5`, a 60-turn cap, and one process per episode:
+`claude-opus-5`, xhigh effort (confirmed in every session record), a 60-turn cap,
+and one process per episode:
 
 ```text
 claude -p "$(cat EPISODE_BRIEF)" --model claude-opus-5 \
@@ -69,12 +79,15 @@ was 1 only where every expanded check passed.
 
 ## Artifact finality
 
-These episodes exercised the final 55-distribution environment, 67-check verifier,
-and binary reward logic introduced by commit `1ad9249`. Commit `f5ff156` only added
-`jobs/` to `.gitignore`; it did not change task environment or reward behavior.
-No environment or reward changes are included with this evidence package. The
-task is frozen for customer reruns at the evidence commit and later documentation-
-only descendants unless explicitly announced.
+These episodes exercised the 55-distribution environment, 67-check verifier, and
+binary reward logic originally introduced by source commit `1ad9249` and landed on
+`main` as the equivalent cherry-pick `53b4785`. Commit `f5ff156` only added `jobs/`
+to `.gitignore`; it did not change task behavior. The later main reconciliation
+added QA metadata/provenance and restored the already-tested mirror-task files; it
+did not alter `supply-chain-audit` environment generation or reward logic. After the
+pilot, the task prompt's stale phrase “roughly thirty” was corrected to “roughly
+fifty-five”; this wording-only correction does not alter the environment or verifier.
+The environment and reward are frozen for customer reruns unless explicitly announced.
 
 ## Oracle evidence
 
