@@ -8,3 +8,7 @@ requirement-brief.html
 .venv/
 .harbor/
 mtf_*/
+
+# Harbor local run artifacts (measurement output, not deliverable)
+jobs/
+harbor-sca/
